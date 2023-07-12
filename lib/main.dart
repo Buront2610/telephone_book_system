@@ -80,7 +80,7 @@ class MyHomePage extends StatelessWidget {
 class GroupPage extends StatelessWidget {
   final Department department;
 
-  GroupPage({Key key, @required this.department}) : super(key: key);
+  GroupPage({Key? key, required this.department}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +111,7 @@ class GroupPage extends StatelessWidget {
 class TeamPage extends StatelessWidget {
   final Group group;
 
-  TeamPage({Key key, @required this.group}) : super(key: key);
+  TeamPage({Key? key, required this.group}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +137,7 @@ class TeamPage extends StatelessWidget {
 class EmployeePage extends StatelessWidget {
   final Employee employee;
 
-  EmployeePage({Key key, @required this.employee}) : super(key: key);
+  EmployeePage({Key? key, required this.employee}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
