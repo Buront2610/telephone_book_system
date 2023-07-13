@@ -17,7 +17,14 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  List<Employee> currentEmployees = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,16 +40,9 @@ class MyHomePage extends StatelessWidget {
               child: ListView.builder(
                 itemCount: departments.length,
                 itemBuilder: (context, index) {
-                  return ListTile(
+                  return ExpansionTile(
                     title: Text(departments[index].name),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => GroupPage(department: departments[index]),
-                        ),
-                      );
-                    },
+                    children: departments[index].groups.map((group) => _buildGroupTile(group)).toList(),
                   );
                 },
               ),
@@ -53,19 +53,11 @@ class MyHomePage extends StatelessWidget {
             child: Container(
               color: Colors.white,
               child: ListView.builder(
-                itemCount: employees.length,
+                itemCount: currentEmployees.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(employees[index].name),
-                    subtitle: Text('Extension: ${employees[index].extension}'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EmployeePage(employee: employees[index]),
-                        ),
-                      );
-                    },
+                    title: Text(currentEmployees[index].name),
+                    subtitle: Text('Extension: ${currentEmployees[index].extension}'),
                   );
                 },
               ),
@@ -75,83 +67,22 @@ class MyHomePage extends StatelessWidget {
       ),
     );
   }
-}
 
-class GroupPage extends StatelessWidget {
-  final Department department;
-
-  GroupPage({Key? key, required this.department}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${department.name} Groups'),
-      ),
-      body: ListView.builder(
-        itemCount: department.groups.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(department.groups[index].name),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TeamPage(group: department.groups[index]),
-                ),
-              );
-            },
-          );
-        },
-      ),
+  Widget _buildGroupTile(Group group) {
+    return ExpansionTile(
+      title: Text(group.name),
+      children: group.teams.map((team) => _buildTeamTile(team)).toList(),
     );
   }
-}
 
-class TeamPage extends StatelessWidget {
-  final Group group;
-
-  TeamPage({Key? key, required this.group}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${group.name} Teams'),
-      ),
-      body: ListView.builder(
-        itemCount: group.teams.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(group.teams[index].name),
-            onTap: () {
-              // Handle team selection
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class EmployeePage extends StatelessWidget {
-  final Employee employee;
-
-  EmployeePage({Key? key, required this.employee}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(employee.name),
-      ),
-      body: Column(
-        children: <Widget>[
-          Text('Name: ${employee.name}'),
-          Text('Extension: ${employee.extension}'),
-          // Add more details as needed
-        ],
-      ),
+  Widget _buildTeamTile(Team team) {
+    return ListTile(
+      title: Text(team.name),
+      onTap: () {
+        setState(() {
+          currentEmployees = team.employees;
+        });
+      },
     );
   }
 }
@@ -172,8 +103,9 @@ class Group {
 
 class Team {
   final String name;
+  final List<Employee> employees;
 
-  Team(this.name);
+  Team(this.name, this.employees);
 }
 
 class Employee {
@@ -185,11 +117,24 @@ class Employee {
 
 // Dummy data
 List<Department> departments = [
-  Department('Sales', [Group('Group 1', [Team('Team 1'), Team('Team 2')])]),
-  Department('Marketing', [Group('Group 1', [Team('Team 1'), Team('Team 2')])]),
-];
-List<Employee> employees = [
-  Employee('John Doe', '123'),
-  Employee('Jane Doe', '456'),
-  Employee('Jim Doe', '789'),
+  Department('Sales', [
+    Group('Group 1', [
+      Team('Team 1', [
+        Employee('John Doe', '123'),
+      ]),
+      Team('Team 2', [
+        Employee('Jane Doe', '456'),
+      ]),
+    ]),
+  ]),
+  Department('Marketing', [
+    Group('Group 1', [
+      Team('Team 1', [
+        Employee('Jim Doe', '789'),
+      ]),
+      Team('Team 2', [
+        Employee('Jill Doe', '321'),
+      ]),
+    ]),
+  ]),
 ];
