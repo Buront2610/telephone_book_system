@@ -68,11 +68,20 @@ class _MyHomePageState extends State<MyHomePage> {
         child: ListView.builder(
           itemCount: currentEmployees.length,
           itemBuilder: (context, index) {
-            return ListTile(
+            return Card(
+              margin: EdgeInsets.all(8.0),
+              child:ListTile(
               leading: Icon(Icons.person),
               title: Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
-              subtitle: Text('Extension: ${currentEmployees[index].extension}', style: Theme.of(context).textTheme.subtitle1),
-            );
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Position: ${currentEmployees[index].position}'),
+                  Text('Extension: ${currentEmployees[index].extension}'),
+                  Text('Email: ${currentEmployees[index].email}'),
+                ],
+              ),
+            ));
           },
         ),
       ),
@@ -129,8 +138,10 @@ class Team {
 class Employee {
   final String name;
   final String extension;
+  final String email;
+  final String position;
 
-  Employee(this.name, this.extension);
+  Employee(this.name, this.extension, this.email, this.position);
 }
 
 // Dummy data
@@ -138,20 +149,20 @@ List<Department> departments = [
   Department('Sales', [
     Group('Group 1', [
       Team('Team 1', [
-        Employee('John Doe', '123'),
+        Employee('John Doe', '123', 'test@test.co.jp', 'Manager'),
       ]),
       Team('Team 2', [
-        Employee('Jane Doe', '456'),
+        Employee('Jane Doe', '456', 'test@test.co.jp', 'Manager'),
       ]),
     ]),
   ]),
   Department('Marketing', [
     Group('Group 1', [
       Team('Team 1', [
-        Employee('Jim Doe', '789'),
+        Employee('Jim Doe', '789','test@test.co.jp', 'Manager'),
       ]),
       Team('Team 2', [
-        Employee('Jill Doe', '321'),
+        Employee('Jill Doe', '321','test@test.co.jp', 'Manager'),
       ]),
     ]),
   ]),
