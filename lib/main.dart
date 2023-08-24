@@ -7,10 +7,12 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       title: 'Phone Directory App',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: Colors.black,
+        colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.white),
         textTheme: TextTheme(
           headline5: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
           subtitle1: TextStyle(fontSize: 18.0, fontStyle: FontStyle.italic),
@@ -27,15 +29,68 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  @override
+  void initState() {
+    super.initState();
+
+    originalEmployeesList = [
+      // Sample data
+      Employee('John Doe', '1234', 'Manager', 'john.doe@example.com'),
+      // Add other employees here
+    ];
+    currentEmployees = List.from(originalEmployeesList);
+
+  }
   List<Employee> currentEmployees = [];
+  List<Employee> originalEmployeesList = [];
   int? selectedTeamIndex;
+
+  _filterEmployees(String query) {
+    if (query.isNotEmpty) {
+      setState(() {
+        currentEmployees = currentEmployees.where((employee) => employee.name.contains(query)).toList();
+      });
+    } else {
+      // Reset the employees list if the query is empty. Make sure to have a backup of the original list.
+      setState(() {
+        currentEmployees = List.from(originalEmployeesList);  // originalEmployeesList should be defined and store the initial list.
+      });
+    }
+  }
+
+
+
+  TextEditingController _searchController = TextEditingController();
+
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
+        
       appBar: AppBar(
         title: Text('電話番号一覧'),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(48.0),
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Search',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _filterEmployees(value);
+                });
+              },
+            ),
+          ),
+        ),
       ),
+
       body: Row(
         children: <Widget>[
           _buildSideBar(),
