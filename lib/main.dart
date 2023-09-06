@@ -189,7 +189,10 @@ Widget _buildGroupTile(Group group) {
     title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
     children: children,
     onExpansionChanged: (bool expanding) {
-      if (expanding) {  // only when the tile is being expanded
+      if (expanding) { 
+         // only when the tile is being expanded
+        print("Expanding, new employee list length: ${group.employees.length}");
+
         setState(() {
           currentEmployees = group.employees;
         });
@@ -263,10 +266,27 @@ List<Department> departments = [
   Department('企画部', [
     Group('役員', [], [
       Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+      
     ]),
     Group('企画総務G', [
       Team('Team 1', [
         Employee('John Doe', '123', 'test@test.co.jp', 'Manager'),
+        Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+
       ]),
       Team('Team 2', [
         Employee('Jane Doe', '456', 'test@test.co.jp', 'Manager'),
