@@ -70,6 +70,7 @@ Future<void> createTables(Database db) async {
       team_id INTEGER,
       group_id INTEGER,
       FOREIGN KEY(team_id) REFERENCES team(id)
+      FOREIGN KEY(group_id) REFERENCES group(id)
     )
   '''); 
 }
