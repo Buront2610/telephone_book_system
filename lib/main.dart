@@ -185,7 +185,7 @@ Widget _buildGroupTile(Group group) {
   children.addAll(group.teams.map((team) => _buildTeamTile(team)).toList());
 
   return ExpansionTile(
-    leading: Icon(Icons.group, color: Color.fromRGBO(234,244,252,1)),
+    leading: Icon(Icons.group, color: Color.fromRGBO(204, 226, 243, 1)),
     title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
     children: children,
     onExpansionChanged: (bool expanding) {
