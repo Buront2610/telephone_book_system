@@ -2,37 +2,37 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class Department{
-  final int id;
-  final String name;
+  final int? id;
+  final String? name;
 
   Department({this.id, this.name});
 }
 
 class Group{
-  final int id;
-  final String name;
-  final int department_id;
+  final int? id;
+  final String? name;
+  final int? departmentId;
 
-  Group({this.id, this.name, this.department_id});
+  Group({this.id, this.name, this.departmentId});
 }
 
 class Team{
-  final int id;
-  final String name;
-  final int group_id;
+  final int? id;
+  final String? name;
+  final int? groupId;
 
-  Team({this.id, this.name, this.group_id});
+  Team({this.id, this.name, this.groupId});
 }
 
 class Employee{
-  final int id;
-  final String name;
-  final String extension;
-  final String email;
-  final int team_id;
-  final int group_id;
+  final int? id;
+  final String? name;
+  final String? extension;
+  final String? email;
+  final int? teamId;
+  final int? groupId;
 
-  Employee({this.id, this.name, this.extension, this.email, this.team_id});
+  Employee({this.id, this.name, this.extension, this.email, this.teamId, this.groupId});
 }
 
 Future<void> createTables(Database db) async {
