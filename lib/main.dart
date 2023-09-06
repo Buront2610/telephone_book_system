@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:anim_search_bar/anim_search_bar.dart';
+// import 'db/db.dart'
 
 void main() {
   runApp(MyApp());
@@ -9,10 +11,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
 
     return MaterialApp(
-      title: 'Phone Directory App',
+      title: '電話番号一覧アプリ',
+      color: Color.fromRGBO(23, 24, 75, 1),
       theme: ThemeData(
-        primaryColor: Colors.black,
-        colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.white),
+        primaryColor: Color.fromRGBO(23, 24, 75, 1),
+        // colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.white),
         textTheme: TextTheme(
           headline5: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
           subtitle1: TextStyle(fontSize: 18.0, fontStyle: FontStyle.italic),
@@ -61,42 +64,47 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 
-  TextEditingController _searchController = TextEditingController();
+  TextEditingController textController = TextEditingController();
 
 
-  @override
-  Widget build(BuildContext context) {
 
-    return Scaffold(
-        
-      appBar: AppBar(
-        title: Text('電話番号一覧'),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(48.0),
-          child: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Search',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Color.fromRGBO(23, 24, 75, 1), // 背景
+    appBar: AppBar(
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+
+        children: [
+          Text('電話番号一覧アプリ', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+          SizedBox(width: 20), // 20ピクセルのスペースを追加
+          Expanded( // 残りのスペースを使う
+            child: AnimSearchBar(
+              width: 400,
+              textController: textController,
+              onSuffixTap: () {
                 setState(() {
-                  _filterEmployees(value);
+                  textController.clear();
                 });
+              },
+              rtl: true,
+              onSubmitted: (String value) {
+                debugPrint("onSubmitted value: " + value);
               },
             ),
           ),
-        ),
+        ],
       ),
-
+    ),
+        // textInputAction: TextInputAction.search,
       body: Row(
         children: <Widget>[
           _buildSideBar(),
           _buildEmployeeList(),
         ],
       ),
+    
     );
   }
 
@@ -104,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Expanded(
       flex: 1,
       child: Container(
-        color: Colors.blue[100],
+        color: Color.fromRGBO(23, 24, 75, 1),
         child: ListView.builder(
           itemCount: departments.length,
           itemBuilder: (context, index) {
@@ -115,9 +123,26 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Widget _buildAnimSeachBar(){
+    return AnimSearchBar(
+      width: 300,
+      textController: textController,
+      onSuffixTap: () {
+        setState(() {
+          textController.clear();
+        });
+      },
+      rtl: true,
+      onSubmitted: (String value) {
+        debugPrint("onSubmitted value: " + value);
+      },
+      // textInputAction: TextInputAction.search,
+    );
+  }
+
   Widget _buildEmployeeList() {
     return Expanded(
-      flex: 2,
+      flex: 3,
       child: Container(
         color: Colors.white,
         child: ListView.builder(
@@ -127,13 +152,13 @@ class _MyHomePageState extends State<MyHomePage> {
               margin: EdgeInsets.all(8.0),
               child:ListTile(
               leading: Icon(Icons.person),
-              title: Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
-              subtitle: Column(
+              title:  Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Position: ${currentEmployees[index].position}'),
-                  Text('Extension: ${currentEmployees[index].extension}'),
-                  Text('Email: ${currentEmployees[index].email}'),
+                  Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
+                  Text('役職: ${currentEmployees[index].position}', style: TextStyle(fontStyle: FontStyle.normal)),
+                  Text('電話番号: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
+                  Text('メールアドレス: ${currentEmployees[index].email}', style: TextStyle(fontStyle: FontStyle.normal)),
                 ],
               ),
             ));
@@ -145,20 +170,41 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildExpansionTile(String title, List<Widget> children, IconData icon) {
     return ExpansionTile(
-      leading: Icon(icon),
-      title: Text(title),
+      leading: Icon(icon, color: Color.fromRGBO(234,244,252,1)),
+      title: Text(title, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
       children: children,
     );
   }
 
-  Widget _buildGroupTile(Group group) {
-    return _buildExpansionTile(group.name, group.teams.map((team) => _buildTeamTile(team)).toList(), Icons.group);
-  }
+
+Widget _buildGroupTile(Group group) {
+  // Teams and employees under this group
+  List<Widget> children = [];
+
+  // Add team tiles
+  children.addAll(group.teams.map((team) => _buildTeamTile(team)).toList());
+
+  return ExpansionTile(
+    leading: Icon(Icons.group, color: Color.fromRGBO(234,244,252,1)),
+    title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+    children: children,
+    onExpansionChanged: (bool expanding) {
+      if (expanding) {  // only when the tile is being expanded
+        setState(() {
+          currentEmployees = group.employees;
+        });
+      }
+    },
+  );
+}
+
+
+
 
   Widget _buildTeamTile(Team team) {
     return ListTile(
-      leading: Icon(Icons.group),
-      title: Text(team.name),
+      leading: Icon(Icons.group, color:Color.fromRGBO(234,244,252,1)),
+      title: Text(team.name, style: TextStyle(fontStyle: FontStyle.normal ,fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
       selected: currentEmployees == team.employees,
       onTap: () {
         setState(() {
@@ -167,20 +213,26 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
+
+  
+Widget _buildEmployeeTile(Employee employee) {
+  return ListTile(
+    leading: Icon(Icons.person, color:Color.fromRGBO(234,244,252,1)),
+    title: Text(employee.name),
+    onTap: () {
+      // Handle employee tap if necessary
+    },
+  );
 }
 
-class Department {
-  final String name;
-  final List<Group> groups;
-
-  Department(this.name, this.groups);
 }
-
 class Group {
   final String name;
   final List<Team> teams;
+  final List<Employee> employees;
 
-  Group(this.name, this.teams);
+  Group(this.name, this.teams, [List<Employee>? employees])
+  : this.employees = employees ?? [];
 }
 
 class Team {
@@ -199,16 +251,28 @@ class Employee {
   Employee(this.name, this.extension, this.email, this.position);
 }
 
+class Department {
+  final String name;
+  final List<Group> groups;
+
+  Department(this.name, this.groups);
+}
+
 // Dummy data
 List<Department> departments = [
-  Department('Sales', [
-    Group('Group 1', [
+  Department('企画部', [
+    Group('役員', [], [
+      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+    ]),
+    Group('企画総務G', [
       Team('Team 1', [
         Employee('John Doe', '123', 'test@test.co.jp', 'Manager'),
       ]),
       Team('Team 2', [
         Employee('Jane Doe', '456', 'test@test.co.jp', 'Manager'),
       ]),
+    ], [
+      Employee('John Doe', '123','sugoi@test.co.jp', 'Manager'),  // <-- ここをemployeesリストに追加
     ]),
   ]),
   Department('Marketing', [
