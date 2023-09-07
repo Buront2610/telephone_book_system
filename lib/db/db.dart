@@ -89,7 +89,7 @@ Future<void> createTables(Database db) async {
   ''');
 
   await db.execute('''
-    CREATE TABLE group(
+    CREATE TABLE group_table(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       department_id INTEGER NOT NULL,
@@ -102,7 +102,7 @@ Future<void> createTables(Database db) async {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       group_id INTEGER NOT NULL,
-      FOREIGN KEY(group_id) REFERENCES group(id)
+      FOREIGN KEY(group_id) REFERENCES group_table(id)
     )
   ''');
 
@@ -117,7 +117,7 @@ Future<void> createTables(Database db) async {
       team_id INTEGER,
       is_hide BOOLEAN NOT NULL,
       FOREIGN KEY(department_id) REFERENCES department(id),
-      FOREIGN KEY(group_id) REFERENCES group(id),
+      FOREIGN KEY(group_id) REFERENCES group_table(id),
       FOREIGN KEY(team_id) REFERENCES team(id)
     )
   ''');
@@ -158,7 +158,7 @@ Future<void> insertGroup(Database db) async {
   ];
   for(var group in groupList){
     await db.insert(
-      'group',
+      'group_table',
       group.toDatabaseMap(),
       conflictAlgorithm: ConflictAlgorithm.replace
     );
