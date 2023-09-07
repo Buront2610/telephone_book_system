@@ -36,12 +36,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   anim_search_bar: ^2.0.3
+  flutter_screenutil: ^5.9.0
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  csv: ^5.0.2
+  file_picker: ^5.5.0
+  io: ^1.0.4
+  build_runner: ^2.4.6
+  sqflite_common_ffi: ^2.3.0+2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  sqflite:
-  path:
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

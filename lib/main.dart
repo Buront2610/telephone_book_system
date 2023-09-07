@@ -1,6 +1,13 @@
+
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:anim_search_bar/anim_search_bar.dart';
-// import 'db/db.dart'
+import 'package:flutter/cupertino.dart';
+import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:sqflite/sqflite.dart';
+import 'db/db.dart'; // Make sure this import path is correct
 
 void main() {
   runApp(MyApp());
@@ -9,13 +16,10 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: '電話番号一覧アプリ',
-      color: Color.fromRGBO(23, 24, 75, 1),
       theme: ThemeData(
         primaryColor: Color.fromRGBO(23, 24, 75, 1),
-        // colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.white),
         textTheme: TextTheme(
           headline5: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
           subtitle1: TextStyle(fontSize: 18.0, fontStyle: FontStyle.italic),
@@ -32,79 +36,60 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  late Database db;
+  late List<Department> departments =[];
+  List<Employee> currentEmployees = [];
+  TextEditingController textController = TextEditingController();
 
   @override
   void initState() {
+    debugPrint('start');
     super.initState();
-
-    originalEmployeesList = [
-      // Sample data
-      Employee('John Doe', '1234', 'Manager', 'john.doe@example.com'),
-      // Add other employees here
-    ];
-    currentEmployees = List.from(originalEmployeesList);
-
-  }
-  List<Employee> currentEmployees = [];
-  List<Employee> originalEmployeesList = [];
-  int? selectedTeamIndex;
-
-  _filterEmployees(String query) {
-    if (query.isNotEmpty) {
-      setState(() {
-        currentEmployees = currentEmployees.where((employee) => employee.name.contains(query)).toList();
-      });
-    } else {
-      // Reset the employees list if the query is empty. Make sure to have a backup of the original list.
-      setState(() {
-        currentEmployees = List.from(originalEmployeesList);  // originalEmployeesList should be defined and store the initial list.
-      });
-    }
+    initializeDB();
+    debugPrint('test');
+  // Define this function to set up your database
   }
 
+  // Add your initializeDB function here
 
+  void _filterEmployees(String query) {
+    // Implement your filtering logic
+  }
 
-  TextEditingController textController = TextEditingController();
-
-
-
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Color.fromRGBO(23, 24, 75, 1), // 背景
-    appBar: AppBar(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-
-        children: [
-          Text('電話番号一覧アプリ', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
-          SizedBox(width: 20), // 20ピクセルのスペースを追加
-          Expanded( // 残りのスペースを使う
-            child: AnimSearchBar(
-              width: 400,
-              textController: textController,
-              onSuffixTap: () {
-                setState(() {
-                  textController.clear();
-                });
-              },
-              rtl: true,
-              onSubmitted: (String value) {
-                debugPrint("onSubmitted value: " + value);
-              },
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('電話番号一覧アプリ'),
+            SizedBox(width: 20),
+            Expanded(
+              child: AnimSearchBar(
+                width: 400,
+                textController: textController,
+                onSuffixTap: () {
+                  setState(() {
+                    textController.clear();
+                  });
+                },
+                rtl: true,
+                onSubmitted: (String value) {
+                  debugPrint("onSubmitted value: " + value);
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-        // textInputAction: TextInputAction.search,
       body: Row(
-        children: <Widget>[
+        children: [
           _buildSideBar(),
           _buildEmployeeList(),
         ],
       ),
-    
     );
   }
 
@@ -113,32 +98,27 @@ Widget build(BuildContext context) {
       flex: 1,
       child: Container(
         color: Color.fromRGBO(23, 24, 75, 1),
-        child: ListView.builder(
-          itemCount: departments.length,
-          itemBuilder: (context, index) {
-            return _buildExpansionTile(departments[index].name, departments[index].groups.map((group) => _buildGroupTile(group)).toList(), Icons.business);
-          },
+        child: ListView(
+          children: [
+            _buildCSVReader(),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: departments.length,
+              itemBuilder: (context, index) {
+                return _buildExpansionTile(
+                  departments[index].name,
+                  departments[index].groups.map((group) => _buildGroupTile(group)).toList(),
+                  Icons.business,
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAnimSeachBar(){
-    return AnimSearchBar(
-      width: 300,
-      textController: textController,
-      onSuffixTap: () {
-        setState(() {
-          textController.clear();
-        });
-      },
-      rtl: true,
-      onSubmitted: (String value) {
-        debugPrint("onSubmitted value: " + value);
-      },
-      // textInputAction: TextInputAction.search,
-    );
-  }
 
   Widget _buildEmployeeList() {
     return Expanded(
@@ -156,7 +136,7 @@ Widget build(BuildContext context) {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
-                  Text('役職: ${currentEmployees[index].position}', style: TextStyle(fontStyle: FontStyle.normal)),
+                  Text('役職: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
                   Text('電話番号: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
                   Text('メールアドレス: ${currentEmployees[index].email}', style: TextStyle(fontStyle: FontStyle.normal)),
                 ],
@@ -177,29 +157,29 @@ Widget build(BuildContext context) {
   }
 
 
-Widget _buildGroupTile(Group group) {
-  // Teams and employees under this group
-  List<Widget> children = [];
+  Widget _buildGroupTile(Group group) {
+    // Teams and employees under this group
+    List<Widget> children = [];
 
-  // Add team tiles
-  children.addAll(group.teams.map((team) => _buildTeamTile(team)).toList());
+    // Add team tiles
+    children.addAll(group.teams.map((team) => _buildTeamTile(team)).toList());
 
-  return ExpansionTile(
-    leading: Icon(Icons.group, color: Color.fromRGBO(204, 226, 243, 1)),
-    title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
-    children: children,
-    onExpansionChanged: (bool expanding) {
-      if (expanding) { 
-         // only when the tile is being expanded
-        print("Expanding, new employee list length: ${group.employees.length}");
+    return ExpansionTile(
+      leading: Icon(Icons.group, color: Color.fromRGBO(204, 226, 243, 1)),
+      title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+      children: children,
+      onExpansionChanged: (bool expanding) {
+        if (expanding) { 
+          // only when the tile is being expanded
+          print("Expanding, new employee list length: ${group.employees.length}");
 
-        setState(() {
-          currentEmployees = group.employees;
-        });
-      }
-    },
-  );
-}
+          setState(() {
+            currentEmployees = group.employees;
+          });
+        }
+      },
+    );
+  }
 
 
 
@@ -228,81 +208,96 @@ Widget _buildEmployeeTile(Employee employee) {
   );
 }
 
-}
-class Group {
-  final String name;
-  final List<Team> teams;
-  final List<Employee> employees;
+Widget _buildCSVReader() {
+  return ListTile(
+    leading: Icon(Icons.add_circle_outline, color:Color.fromRGBO(234,244,252,1)),
+    title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+    onTap: () async{
+      try{
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['csv'],
+        );
+        if(result != null && result.files.single.path != null){
+          final input = File(result.files.single.path!).openRead();
+          final fields = await input.transform(utf8.decoder).transform(CsvToListConverter()).toList();
+          debugPrint(fields.toString());
 
-  Group(this.name, this.teams, [List<Employee>? employees])
-  : this.employees = employees ?? [];
-}
-
-class Team {
-  final String name;
-  final List<Employee> employees;
-
-  Team(this.name, this.employees);
-}
-
-class Employee {
-  final String name;
-  final String extension;
-  final String email;
-  final String position;
-
-  Employee(this.name, this.extension, this.email, this.position);
+        }
+      }catch(e){
+        debugPrint(e.toString());
+      }
+      // Handle employee tap if necessary
+    },
+  );
 }
 
-class Department {
-  final String name;
-  final List<Group> groups;
 
-  Department(this.name, this.groups);
+
 }
+// class Group {
+//   final String name;
+//   final List<Team> teams;
+//   final List<Employee> employees;
 
-// Dummy data
-List<Department> departments = [
-  Department('企画部', [
-    Group('役員', [], [
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-      
-    ]),
-    Group('企画総務G', [
-      Team('Team 1', [
-        Employee('John Doe', '123', 'test@test.co.jp', 'Manager'),
-        Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+//   Group(this.name, this.teams, [List<Employee>? employees])
+//   : this.employees = employees ?? [];
+// }
 
-      ]),
-      Team('Team 2', [
-        Employee('Jane Doe', '456', 'test@test.co.jp', 'Manager'),
-      ]),
-    ], [
-      Employee('John Doe', '123','sugoi@test.co.jp', 'Manager'),  // <-- ここをemployeesリストに追加
-    ]),
-  ]),
-  Department('Marketing', [
-    Group('Group 1', [
-      Team('Team 1', [
-        Employee('Jim Doe', '789','test@test.co.jp', 'Manager'),
-      ]),
-      Team('Team 2', [
-        Employee('Jill Doe', '321','test@test.co.jp', 'Manager'),
-      ]),
-    ]),
-  ]),
-];
+// class Team {
+//   final String name;
+//   final List<Employee> employees;
+
+//   Team(this.name, this.employees);
+// }
+
+// class Employee {
+//   final String name;
+//   final String extension;
+//   final String email;
+//   final String position;
+
+//   Employee(this.name, this.extension, this.email, this.position);
+// }
+
+// class Department {
+//   final String name;
+//   final List<Group> groups;
+
+//   Department(this.name, this.groups);
+// }
+
+// // Dummy data
+// List<Department> departments = [
+//   Department('企画部', [
+//     Group('役員', [], [
+//       Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+//       Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+//       Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+    
+//     ]),
+//     Group('企画総務G', [
+//       Team('Team 1', [
+//         Employee('John Doe', '123', 'test@test.co.jp', 'Manager'),
+//         Employee('Jim Doe', '789','test@test.co.jp', 'president'),
+
+//       ]),
+//       Team('Team 2', [
+//         Employee('Jane Doe', '456', 'test@test.co.jp', 'Manager'),
+//       ]),
+//     ], [
+//       Employee('John Doe', '123','sugoi@test.co.jp', 'Manager'),  // <-- ここをemployeesリストに追加
+//     ]),
+//   ]),
+//   Department('Marketing', [
+//     Group('Group 1', [
+//       Team('Team 1', [
+//         Employee('Jim Doe', '789','test@test.co.jp', 'Manager'),
+//       ]),
+//       Team('Team 2', [
+//         Employee('Jill Doe', '321','test@test.co.jp', 'Manager'),
+//       ]),
+//     ]),
+//   ]),
+// ];
+
