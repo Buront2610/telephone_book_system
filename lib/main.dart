@@ -114,8 +114,7 @@ Future<void> initialize() async {
         color: Color.fromRGBO(23, 24, 75, 1),
         child: ListView(
           children: [
-            _buildCSVReader(),
-            _buildCSVExport(db),
+
             ListView.builder(
               shrinkWrap: true,
               itemCount: departments.length,
@@ -127,6 +126,8 @@ Future<void> initialize() async {
                 );
               },
             ),
+            _buildCSVReader(),
+            _buildCSVExport(db),
           ],
         ),
       ),
