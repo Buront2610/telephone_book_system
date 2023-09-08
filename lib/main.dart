@@ -115,6 +115,7 @@ Future<void> initialize() async {
         child: ListView(
           children: [
             _buildCSVReader(),
+            _buildCSVExport(db),
             ListView.builder(
               shrinkWrap: true,
               itemCount: departments.length,
@@ -149,7 +150,7 @@ Future<void> initialize() async {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
-                  Text('役職: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
+                  Text('役職: ${currentEmployees[index].position}', style: TextStyle(fontStyle: FontStyle.normal)),
                   Text('電話番号: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
                   Text('メールアドレス: ${currentEmployees[index].email}', style: TextStyle(fontStyle: FontStyle.normal)),
                 ],
