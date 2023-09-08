@@ -367,6 +367,22 @@ Future<void> deleteAllEmployees(Database db) async {
   await db.delete('employee');
 }
 
+
+void exportToCSV (Database db) async{
+
+    final String departmentsCsv = await exportDepartmentsToCsv(db);
+    await saveCsvToFile(departmentsCsv, 'departments');
+
+    final String groupsCsv = await exportGroupsToCsv(db);
+    await saveCsvToFile(groupsCsv, 'groups');
+
+    final String teamsCsv = await exportTeamsToCsv(db);
+    await saveCsvToFile(teamsCsv, 'teams');
+
+    final String employeesCsv = await exportEmployeesToCsv(db);
+    await saveCsvToFile(employeesCsv, 'employees');
+
+}
 // // Backup all records from the "department" table
 // Future<void> backupDepartments(Database db) async {
 //   List<Map<String, dynamic>> records = await db.query('department');

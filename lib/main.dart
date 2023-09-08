@@ -245,7 +245,21 @@ Widget _buildCSVReader() {
   );
 }
 
+Widget _buildCSVExport(Database db){
+  return ListTile(
+    leading: Icon(Icons.download, color:Color.fromRGBO(234,244,252,1)),
+    title: Text('データエクスポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+    onTap: () async{
+      try{
+        exportToCSV(db);
 
+      }
+      catch(e){
+        debugPrint(e.toString());
+      }
+    },
+  );
+}
 
 }
 // class Group {
