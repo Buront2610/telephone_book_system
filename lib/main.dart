@@ -36,19 +36,33 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Database db;
+  late final Database db;
   late List<Department> departments =[];
   List<Employee> currentEmployees = [];
   TextEditingController textController = TextEditingController();
 
-  @override
-  void initState() {
-    debugPrint('start');
-    super.initState();
-    initializeDB();
-    debugPrint('test');
-  // Define this function to set up your database
+@override
+void initState() {
+  super.initState();
+  debugPrint('start');
+  initialize();
+}
+
+Future<void> initialize() async {
+  final database = await initializeDB();
+  setState(() {
+    db = database;
+    debugPrintDatabaseContents(db);
+  });
+  final updatedDepartments = await updateDepartmentsFromDB(db);
+  setState(() {
+    departments = updatedDepartments;
+  });
+  for (var department in departments) {
+    exploreDepartment(department);
   }
+  debugPrint('end');
+}
 
   // Add your initializeDB function here
 
@@ -103,7 +117,6 @@ class _MyHomePageState extends State<MyHomePage> {
             _buildCSVReader(),
             ListView.builder(
               shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
               itemCount: departments.length,
               itemBuilder: (context, index) {
                 return _buildExpansionTile(

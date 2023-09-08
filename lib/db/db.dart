@@ -1,6 +1,11 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+
 
 
 class Department {
@@ -57,6 +62,7 @@ class Team {
 class Employee {
   final int id;
   final String name;
+  final String position;
   final String extension;
   final String email;
   final int? departmentId;
@@ -64,18 +70,19 @@ class Employee {
   final int? teamId;
   final bool isHide;
 
-  Employee(this.id, this.name, this.extension, this.email, {this.departmentId, this.groupId, this.teamId, this.isHide = false});
+  Employee(this.id, this.name,this.position, this.extension, this.email, {this.departmentId, this.groupId, this.teamId, this.isHide = false});
 
   Map<String, dynamic> toDatabaseMap() {
     return {
       'id': id,
       'name': name,
+      'position': position,
       'extension': extension,
       'email': email,
       'department_id': departmentId,
       'group_id': groupId,
       'team_id': teamId,
-      'is_hide': isHide,
+      'is_hide': isHide? 1 : 0,
     };
   }
 }
@@ -110,6 +117,7 @@ Future<void> createTables(Database db) async {
     CREATE TABLE employee(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      position TEXT,
       extension TEXT,
       email TEXT,
       department_id INTEGER,
@@ -125,7 +133,7 @@ Future<void> createTables(Database db) async {
 
 
 // CRUD with Hard-coded Data
-Future<void> insertDepartment(Database db) async {
+Future<void> setupInsertDepartment(Database db) async {
   final departmentList = [
     Department(1, '役員'),
     Department(2, '企画部'),
@@ -141,7 +149,7 @@ Future<void> insertDepartment(Database db) async {
   }
 }
 
-Future<void> insertGroup(Database db) async {
+Future<void> setupInsertGroup(Database db) async {
   final groupList = [
     Group(1,'企画総務G',2),
     Group(2,'経営企画PJ',2),
@@ -165,12 +173,12 @@ Future<void> insertGroup(Database db) async {
   }
 }
 
-Future<void> insertTeam(Database db) async{
+Future<void> setupInsertTeam(Database db) async{
   final teamList = [
     Team(1,'製造チーム',8),
     Team(2,'生管チーム',8),
-    Team(3,'管理業務T',8),
-    Team(4,'土木制御T',8),
+    Team(3,'管理業務T',9),
+    Team(4,'土木制御T',9),
     Team(5,'品質管理T',11),
     Team(6,'品質検査T',11),
   ];
@@ -183,12 +191,56 @@ Future<void> insertTeam(Database db) async{
   }
 }
 
-Future<void> insertEmployee(Database db, Employee employee, employeeList) async{
+Future<void> insertDepartment(Database db , departmentList) async {
+  for (var department in departmentList) {
+    await db.insert(
+      'department',
+      department.toDatabaseMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+}
 
+Future<void> insertGroup(Database db, groupList) async {
+  for(var group in groupList){
+    await db.insert(
+      'group_table',
+      group.toDatabaseMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace
+    );
+  }
+}
+
+Future<void> insertTeam(Database db, teamList) async{
+  for(var team in teamList){
+    await db.insert(
+      'team',
+      team.toDatabaseMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace
+    );
+  }
+}
+
+Future<void> insertEmployee(Database db, Employee employee, employeeList) async{
   for(var employee in employeeList){
     await db.insert(
       'employee',
-      employee.toMap(),
+      employee.toDatabaseMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace
+    );
+  }
+}
+
+Future<void> testInsertEmployee(Database db) async{
+  final employeeList = [
+    Employee(1,'Jim Doe','代表取締役社長','789','test@co.jp',departmentId:1),
+    Employee(2,'John Doe','主任','123','test@co.jp',departmentId:2,groupId:1),
+    Employee(3,'Jane Doe','主任','456','test@co.jp',departmentId:2,groupId:3),
+  ];
+    for(var employee in employeeList){
+    await db.insert(
+      'employee',
+      employee.toDatabaseMap(),
       conflictAlgorithm: ConflictAlgorithm.replace
     );
   }
@@ -208,7 +260,7 @@ Future<List<Department>> getDepartments(Database db) async {
 
 Future<List<Group>> getGroups(Database db) async {
   try {
-    final List<Map<String, dynamic>> maps = await db.query('group');
+    final List<Map<String, dynamic>> maps = await db.query('group_table');
     return List.generate(maps.length, (i) {
       return Group(maps[i]['id'] as int, maps[i]['name'] as String, maps[i]['department_id'] as int);
     });
@@ -225,7 +277,7 @@ Future<List<Team>> getTeams(Database db) async {
       return Team(maps[i]['id'] as int, maps[i]['name'] as String, maps[i]['group_id'] as int);
     });
   } catch (e) {
-    print("Error while getting teams: $e");
+    debugPrint("Error while getting teams: $e");
     return [];
   }
 }
@@ -237,12 +289,13 @@ Future<List<Employee>> getEmployees(Database db) async {
       return Employee(
         maps[i]['id'] as int, 
         maps[i]['name'] as String, 
+        maps[i]['position'] as String,
         maps[i]['extension'] as String, 
         maps[i]['email'] as String,
         departmentId: maps[i]['department_id'] as int?,
         groupId: maps[i]['group_id'] as int?,
         teamId: maps[i]['team_id'] as int?,
-        isHide: maps[i]['is_hide'] as bool,
+        isHide: maps[i]['is_hide'] == 1 ? true : false,
       );
     });
   } catch (e) {
@@ -251,6 +304,96 @@ Future<List<Employee>> getEmployees(Database db) async {
   }
 }
 
+// Update department information
+Future<void> updateDepartment(Database db, Department department) async {
+  await db.update(
+    'department',
+    department.toDatabaseMap(),
+    where: 'id = ?',
+    whereArgs: [department.id],
+  );
+}
+
+// Update group information
+Future<void> updateGroup(Database db, Group group) async {
+  await db.update(
+    'group_table',
+    group.toDatabaseMap(),
+    where: 'id = ?',
+    whereArgs: [group.id],
+  );
+}
+
+// Update team information
+Future<void> updateTeam(Database db, Team team) async {
+  await db.update(
+    'team',
+    team.toDatabaseMap(),
+    where: 'id = ?',
+    whereArgs: [team.id],
+  );
+}
+
+// Update employee information
+Future<void> updateEmployee(Database db, Employee employee) async {
+  await db.update(
+    'employee',
+    employee.toDatabaseMap(),
+    where: 'id = ?',
+    whereArgs: [employee.id],
+  );
+}
+
+
+//delete data
+
+// Delete all records from the "department" table
+Future<void> deleteAllDepartments(Database db) async {
+  await db.delete('department');
+}
+
+// Delete all records from the "group_table" table
+Future<void> deleteAllGroups(Database db) async {
+  await db.delete('group_table');
+}
+
+// Delete all records from the "team" table
+Future<void> deleteAllTeams(Database db) async {
+  await db.delete('team');
+}
+
+// Delete all records from the "employee" table
+Future<void> deleteAllEmployees(Database db) async {
+  await db.delete('employee');
+}
+
+// // Backup all records from the "department" table
+// Future<void> backupDepartments(Database db) async {
+//   List<Map<String, dynamic>> records = await db.query('department');
+//   String jsonBackup = jsonEncode(records);
+//   // Save this JSON string to a file or other backup storage
+// }
+
+// // Backup all records from the "group_table" table
+// Future<void> backupGroups(Database db) async {
+//   List<Map<String, dynamic>> records = await db.query('group_table');
+//   String jsonBackup = jsonEncode(records);
+//   // Save this JSON string to a file or other backup storage
+// }
+
+// // Backup all records from the "team" table
+// Future<void> backupTeams(Database db) async {
+//   List<Map<String, dynamic>> records = await db.query('team');
+//   String jsonBackup = jsonEncode(records);
+//   // Save this JSON string to a file or other backup storage
+// }
+
+// // Backup all records from the "employee" table
+// Future<void> backupEmployees(Database db) async {
+//   List<Map<String, dynamic>> records = await db.query('employee');
+//   String jsonBackup = jsonEncode(records);
+//   // Save this JSON string to a file or other backup storage
+// }
 
 Future<List<Department>> updateDepartmentsFromDB(Database db) async {
   List<Department> dbDepartments = await getDepartments(db);
@@ -280,9 +423,115 @@ Future<List<Department>> updateDepartmentsFromDB(Database db) async {
 
     return Department(dbDept.id, dbDept.name, groups: deptGroups, employees: deptEmployees);
   }).toList();
-  return departments;
 
+  for (var dept in departments) {
+    exploreDepartment(dept);  // debugPrint を exploreDepartment 関数で置換
+  }
+  return departments;
 }
+
+void exploreDepartment(Department department) {
+  debugPrint('Department: ${department.name}');
+
+  for (Group group in department.groups) {
+    debugPrint('Group: ${group.name}');
+    
+    for (Team team in group.teams) {
+      debugPrint('Team: ${team.name}');
+      
+      for (Employee employee in team.employees) {
+        debugPrint('Employee in Team: ${employee.name}');
+      }
+    }
+
+    for (Employee employee in group.employees) {
+      debugPrint('Employee in Group: ${employee.name}');
+    }
+  }
+
+  for (Employee employee in department.employees) {
+    debugPrint('Employee in Department: ${employee.name}');
+  }
+}
+
+
+Future<void> debugPrintDatabaseContents(Database db) async {
+  List<Department> departments = await getDepartments(db);
+  List<Group> groups = await getGroups(db);
+  List<Team> teams = await getTeams(db);
+  List<Employee> employees = await getEmployees(db);
+
+  debugPrint("=== Debug Print of Database Contents ===");
+  debugPrint("Departments:");
+  for (var dept in departments) {
+    debugPrint(dept.toDatabaseMap().toString());
+  }
+
+  debugPrint("Groups:");
+  for (var group in groups) {
+    debugPrint(group.toDatabaseMap().toString());
+  }
+
+  debugPrint("Teams:");
+  for (var team in teams) {
+    debugPrint(team.toDatabaseMap().toString());
+  }
+
+  debugPrint("Employees:");
+  for (var employee in employees) {
+    debugPrint(employee.toDatabaseMap().toString());
+  }
+  debugPrint("=== End of Debug Print ===");
+}
+
+String listToCsv(List<Map<String, dynamic>> records){
+  if(records.isEmpty){
+    return '';
+  }
+
+  final StringBuffer csvBuffer = StringBuffer();
+  final List<String> header = records.first.keys.toList();
+
+  csvBuffer.writeln(header.join(','));
+
+  for (final record in records){
+    final List<String> values = record.values.map((e) => e.toString()).toList();
+    csvBuffer.writeln(values.join(','));
+  }
+  return csvBuffer.toString();
+}
+
+// Export all records from the "department" table as CSV
+Future<String> exportDepartmentsToCsv(Database db) async {
+  final List<Map<String, dynamic>> records = await db.query('department');
+  return listToCsv(records);
+}
+
+// Export all records from the "group_table" table as CSV
+Future<String> exportGroupsToCsv(Database db) async {
+  final List<Map<String, dynamic>> records = await db.query('group_table');
+  return listToCsv(records);
+}
+
+// Export all records from the "team" table as CSV
+Future<String> exportTeamsToCsv(Database db) async {
+  final List<Map<String, dynamic>> records = await db.query('team');
+  return listToCsv(records);
+}
+
+// Export all records from the "employee" table as CSV
+Future<String> exportEmployeesToCsv(Database db) async {
+  final List<Map<String, dynamic>> records = await db.query('employee');
+  return listToCsv(records);
+}
+
+// Export all records from the "department" table as CSV
+Future<void> saveCsvToFile(String csvContent, String fileName) async {
+  final directory = await getApplicationDocumentsDirectory();
+  final File file = File('${directory.path}/$fileName.csv');
+  await file.writeAsString(csvContent);
+}
+
 
 
 Future<Database> initializeDB() async {
@@ -292,13 +541,18 @@ Future<Database> initializeDB() async {
 
   String path = await getDatabasesPath();
   return openDatabase(
-    join(path, 'employee.db'),
+    join(path, 'telephone_books.db'),
     onCreate: (database, version) async {
       await createTables(database);
-      await insertDepartment(database);
-      await insertGroup(database);
-      await insertTeam(database);
+      await setupInsertDepartment(database);
+      await setupInsertGroup(database);
+      await setupInsertTeam(database);
+      await testInsertEmployee(database);
+      // Debug print the database contents
+      await debugPrintDatabaseContents(database);
+      debugPrint("Database created");
     },
+
     version: 1
   );
 }
