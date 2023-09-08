@@ -126,8 +126,16 @@ Future<void> initialize() async {
                 );
               },
             ),
-            _buildCSVReader(),
-            _buildCSVExport(db),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildCSVReader(),
+                _buildCSVExport(db),
+              ],
+            ),
+          ),
           ],
         ),
       ),
