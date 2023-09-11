@@ -286,17 +286,53 @@ Widget _buildCSVReader() {
     leading: Icon(Icons.add_circle_outline, color:Color.fromRGBO(234,244,252,1)),
     title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
     onTap: () async{
-      try{
+        try {
+        // Step 1: File selection
         FilePickerResult? result = await FilePicker.platform.pickFiles(
           type: FileType.custom,
           allowedExtensions: ['csv'],
         );
-        if(result != null && result.files.single.path != null){
+        if (result != null && result.files.single.path != null) {
           final input = File(result.files.single.path!).openRead();
           final fields = await input.transform(utf8.decoder).transform(CsvToListConverter()).toList();
-          debugPrint(fields.toString());
 
+          // Step 2: Show table selection dialog and validate data
+          String? selectedTable = await showDialog(
+            context: context,
+            builder: (context) => TableSelectionDialog(), // Implement this dialog
+          );
+
+          if (selectedTable == null) return; // User canceled the dialog
+
+          bool isValidData = validateCsvData(fields, selectedTable); // Implement this function
+          if (!isValidData) {
+            // Show error message or dialog
+            return;
+          }
+
+          // Step 3: Delete old data and import new data
+          Database db; // Initialize your database instance here
+
+          switch (selectedTable) {
+            case 'Department':
+              await deleteAllDepartments(db);
+              await insertDepartment(db, parseDepartments(fields)); // Implement this function
+              break;
+            case 'Group':
+              await deleteAllGroups(db);
+              await insertGroup(db, parseGroups(fields)); // Implement this function
+              break;
+            case 'Team':
+              await deleteAllTeams(db);
+              await insertTeam(db, parseTeams(fields)); // Implement this function
+              break;
+            case 'Employee':
+              await deleteAllEmployees(db);
+              await insertEmployee(db, parseEmployees(fields)); // Implement this function
+              break;
+          }
         }
+
       }catch(e){
         debugPrint(e.toString());
       }
