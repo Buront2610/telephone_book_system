@@ -45,6 +45,7 @@ dependencies:
   build_runner: ^2.4.6
   sqflite_common_ffi: ^2.3.0+2
   path_provider: ^2.1.1
+  permission_handler: ^10.4.5
 
 dev_dependencies:
   flutter_test:

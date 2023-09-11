@@ -1,10 +1,11 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 
 
@@ -368,21 +369,7 @@ Future<void> deleteAllEmployees(Database db) async {
 }
 
 
-void exportToCSV (Database db) async{
 
-    final String departmentsCsv = await exportDepartmentsToCsv(db);
-    await saveCsvToFile(departmentsCsv, 'departments');
-
-    final String groupsCsv = await exportGroupsToCsv(db);
-    await saveCsvToFile(groupsCsv, 'groups');
-
-    final String teamsCsv = await exportTeamsToCsv(db);
-    await saveCsvToFile(teamsCsv, 'teams');
-
-    final String employeesCsv = await exportEmployeesToCsv(db);
-    await saveCsvToFile(employeesCsv, 'employees');
-
-}
 // // Backup all records from the "department" table
 // Future<void> backupDepartments(Database db) async {
 //   List<Map<String, dynamic>> records = await db.query('department');
@@ -542,12 +529,59 @@ Future<String> exportEmployeesToCsv(Database db) async {
 }
 
 // Export all records from the "department" table as CSV
-Future<void> saveCsvToFile(String csvContent, String fileName) async {
-  final directory = await getApplicationDocumentsDirectory();
-  final File file = File('${directory.path}/$fileName.csv');
+
+Future<void> saveCsvToFile(String csvContent, String fileName, String directory) async {
+  // 選択されたディレクトリとファイル名でFileインスタンスを作成
+  final File file = File(join(directory, '$fileName.csv'));
+
+  // ファイルにCSVコンテンツを書き込む
   await file.writeAsString(csvContent);
 }
 
+
+void exportToCSV(Database db) async {
+  // パーミッションをリクエスト
+  // PermissionStatus status = await Permission.storage.request();
+
+  // if (status.isGranted) {
+    // ユーザーにディレクトリを選ばせる
+    String? directory = await FilePicker.platform.getDirectoryPath();
+
+    if (directory != null) {
+      // Export Departments
+      final String departmentsCsv = await exportDepartmentsToCsv(db);
+      debugPrint("CSV:" + departmentsCsv);
+      await saveCsvToFile(departmentsCsv, 'departments', directory);
+
+      // Export Groups
+      final String groupsCsv = await exportGroupsToCsv(db);
+      debugPrint("CSV:" + groupsCsv);
+      await saveCsvToFile(groupsCsv, 'groups', directory);
+
+      // Export Teams
+      final String teamsCsv = await exportTeamsToCsv(db);
+      debugPrint("CSV:" + teamsCsv);
+      await saveCsvToFile(teamsCsv, 'teams', directory);
+
+      // Export Employees
+      final String employeesCsv = await exportEmployeesToCsv(db);
+      debugPrint("CSV:" + employeesCsv);
+      await saveCsvToFile(employeesCsv, 'employees', directory);
+    } else {
+      print("No directory selected");
+    }
+  // } else {
+  //   print("Storage permission is not granted");
+  // }
+}
+Future<void> requestPermission(Permission permission) async {
+  PermissionStatus status = await permission.request();
+  if (status.isGranted) {
+    // パーミッションが許可された
+  } else {
+    // パーミッションが拒否された
+  }
+}
 
 
 Future<Database> initializeDB() async {

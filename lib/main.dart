@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -39,35 +38,80 @@ class _MyHomePageState extends State<MyHomePage> {
   late final Database db;
   late List<Department> departments =[];
   List<Employee> currentEmployees = [];
+  List<Employee> originalEmployees = [];
+  List<Employee> allEmployees = [];
   TextEditingController textController = TextEditingController();
 
-@override
-void initState() {
-  super.initState();
-  debugPrint('start');
-  initialize();
-}
-
-Future<void> initialize() async {
-  final database = await initializeDB();
-  setState(() {
-    db = database;
-    debugPrintDatabaseContents(db);
-  });
-  final updatedDepartments = await updateDepartmentsFromDB(db);
-  setState(() {
-    departments = updatedDepartments;
-  });
-  for (var department in departments) {
-    exploreDepartment(department);
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('start');
+    initialize();
   }
-  debugPrint('end');
-}
+
+  Future<void> initialize() async {
+    final database = await initializeDB();
+    setState(() {
+      db = database;
+      debugPrintDatabaseContents(db);
+    });
+    final updatedDepartments = await updateDepartmentsFromDB(db);
+
+    setState(() {
+      departments = updatedDepartments;
+      _resetAllEmployees();
+    });
+    for (var department in departments) {
+      exploreDepartment(department);
+    }
+    debugPrint('end');
+  }
+
+
+  // 全てのDepartment（およびそれに属するGroupとTeam）からEmployeeを再取得してallEmployeesをリセットする関数
+  void _resetAllEmployees() {
+    allEmployees.clear();
+    for (var department in departments) {
+      allEmployees.addAll(department.employees);  // Departmentに直接属するEmployee
+      for (var group in department.groups) {
+        allEmployees.addAll(group.employees);  // Groupに属するEmployee
+        for (var team in group.teams) {
+          allEmployees.addAll(team.employees);  // Teamに属するEmployee
+        }
+      }
+    }
+    // 重複を削除
+    allEmployees = allEmployees.toSet().toList();
+  }
 
   // Add your initializeDB function here
-
   void _filterEmployees(String query) {
-    // Implement your filtering logic
+    debugPrint("Query: " + query);
+    if (query.isEmpty) {
+      _resetAllEmployees(); // 全てのEmployeeを再取得してリセット
+      setState(() {
+        currentEmployees = List.from(allEmployees);  // リセット
+      });
+    } else {
+      setState(() {
+        currentEmployees = allEmployees
+            .where((employee) =>
+                employee.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      });
+      for (var employee in currentEmployees) {
+        debugPrint("name:" + employee.name);
+      }
+      for (var employee in allEmployees) {
+        debugPrint("name:" + employee.name);
+      }
+    }
+      for (var employee in currentEmployees) {
+        debugPrint("name:" + employee.name);
+      }
+      for (var employee in allEmployees) {
+        debugPrint("name:" + employee.name);
+      }
   }
 
   @override
@@ -87,11 +131,13 @@ Future<void> initialize() async {
                 onSuffixTap: () {
                   setState(() {
                     textController.clear();
+                    currentEmployees = List.from(originalEmployees);  // リセット
                   });
                 },
                 rtl: true,
                 onSubmitted: (String value) {
                   debugPrint("onSubmitted value: " + value);
+                  _filterEmployees(value);
                 },
               ),
             ),
@@ -123,19 +169,14 @@ Future<void> initialize() async {
                   departments[index].name,
                   departments[index].groups.map((group) => _buildGroupTile(group)).toList(),
                   Icons.business,
+                  departments[index], // Pass the Department object here
                 );
               },
             ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildCSVReader(),
-                _buildCSVExport(db),
-              ],
-            ),
-          ),
+
+
+              _buildCSVReader(),
+              _buildCSVExport(db),
           ],
         ),
       ),
@@ -171,13 +212,22 @@ Future<void> initialize() async {
     );
   }
 
-  Widget _buildExpansionTile(String title, List<Widget> children, IconData icon) {
-    return ExpansionTile(
-      leading: Icon(icon, color: Color.fromRGBO(234,244,252,1)),
-      title: Text(title, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
-      children: children,
-    );
-  }
+Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, Department department) {
+  return ExpansionTile(
+    leading: Icon(icon, color: Color.fromRGBO(234,244,252,1)),
+    title: Text(title, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+    children: children,
+    onExpansionChanged: (bool expanding) {
+      if (expanding) {
+        setState(() {
+          currentEmployees = department.employees;
+          originalEmployees = List.from(currentEmployees);  // 元のリストを保存
+        });
+      }
+    },
+  );
+}
+
 
 
   Widget _buildGroupTile(Group group) {
