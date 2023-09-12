@@ -222,7 +222,7 @@ Future<void> insertTeam(Database db, teamList) async{
   }
 }
 
-Future<void> insertEmployee(Database db, Employee employee, employeeList) async{
+Future<void> insertEmployee(Database db, employeeList) async{
   for(var employee in employeeList){
     await db.insert(
       'employee',

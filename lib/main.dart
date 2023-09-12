@@ -7,7 +7,7 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:sqflite/sqflite.dart';
 import 'db/db.dart'; // Make sure this import path is correct
-
+import 'csv/csv.dart';
 void main() {
   runApp(MyApp());
 }
@@ -128,6 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: AnimSearchBar(
                 width: 400,
                 textController: textController,
+                style: TextStyle(fontStyle: FontStyle.normal),
                 onSuffixTap: () {
                   setState(() {
                     textController.clear();
@@ -175,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
 
-              _buildCSVReader(),
+              _buildCSVReader(db),
               _buildCSVExport(db),
           ],
         ),
@@ -281,37 +282,45 @@ Widget _buildEmployeeTile(Employee employee) {
   );
 }
 
-Widget _buildCSVReader() {
+Widget _buildCSVReader(Database db) {
   return ListTile(
     leading: Icon(Icons.add_circle_outline, color:Color.fromRGBO(234,244,252,1)),
     title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
     onTap: () async{
-        try {
-        // Step 1: File selection
+      try {
+        // Step 1: Show table selection dialog
+        String? selectedTable = await TableSelectionDialog().show(context);
+        debugPrint("Selected table: " + selectedTable.toString());
+        if (selectedTable == null) return; // User canceled the dialog
+
+        // Step 2: File selection
         FilePickerResult? result = await FilePicker.platform.pickFiles(
           type: FileType.custom,
           allowedExtensions: ['csv'],
         );
+
+        debugPrint("Selected file: " + result.toString());
+
         if (result != null && result.files.single.path != null) {
           final input = File(result.files.single.path!).openRead();
-          final fields = await input.transform(utf8.decoder).transform(CsvToListConverter()).toList();
+          final content = await input.transform(utf8.decoder).join();  // ファイルの全内容を一つのStringに読み込む
+          final lines = content.split(RegExp(r'\r?\n'));  // \r\n または \n で行に分割
 
-          // Step 2: Show table selection dialog and validate data
-          String? selectedTable = await showDialog(
-            context: context,
-            builder: (context) => TableSelectionDialog(), // Implement this dialog
-          );
+          final fields = <List<String>>[];
+          for (var line in lines) {
+            debugPrint("Line: " + line.toString());
+            fields.add(line.split(',').map((e) => e.trim()).toList());
+          }
 
-          if (selectedTable == null) return; // User canceled the dialog
-
+          // Step 3: Validate data
           bool isValidData = validateCsvData(fields, selectedTable); // Implement this function
+          debugPrint("Is valid data: " + isValidData.toString());
+          debugPrint("Fields: " + fields.toString());
+
           if (!isValidData) {
             // Show error message or dialog
             return;
           }
-
-          // Step 3: Delete old data and import new data
-          Database db; // Initialize your database instance here
 
           switch (selectedTable) {
             case 'Department':
@@ -332,14 +341,16 @@ Widget _buildCSVReader() {
               break;
           }
         }
-
-      }catch(e){
+      } catch(e) {
         debugPrint(e.toString());
       }
       // Handle employee tap if necessary
     },
   );
 }
+
+
+
 
 Widget _buildCSVExport(Database db){
   return ListTile(
