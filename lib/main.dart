@@ -312,15 +312,15 @@ Widget _buildCSVReader(Database db) {
           }
 
           // Step 3: Validate data
-          bool isValidData = validateCsvData(fields, selectedTable); // Implement this function
+          final isValidData = validCsvData(fields, selectedTable); // Implement this function
           debugPrint("Is valid data: " + isValidData.toString());
           debugPrint("Fields: " + fields.toString());
 
-          if (!isValidData) {
+          if (isValidData == null) {
             // Show error message or dialog
             return;
           }
-
+          
           switch (selectedTable) {
             case 'Department':
               await deleteAllDepartments(db);

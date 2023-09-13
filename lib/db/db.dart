@@ -192,12 +192,16 @@ Future<void> setupInsertTeam(Database db) async{
 }
 
 Future<void> insertDepartment(Database db , departmentList) async {
-  for (var department in departmentList) {
-    await db.insert(
-      'department',
-      department.toDatabaseMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  try{
+    for (var department in departmentList) {
+      await db.insert(
+        'department',
+        department.toDatabaseMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } 
+  } catch (e) {
+    debugPrint("Error while inserting departments: $e");
   }
 }
 
