@@ -8,66 +8,73 @@ bool isInt(String? s){
 
 
 //CSVデータの判定処理
-List<List<dynamic>>? validCsvData(List<List<dynamic>> fields, String selectedTable) {
-  if (fields.isEmpty) return null;
+bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
+  if (fields.isEmpty) return false;
 
   List<dynamic> header = fields.first.map((e) => e.toString().trim()).toList();
   debugPrint("Header elements:");
   for (var element in header) {
     debugPrint("Element: [$element]");
   }
-
-  List<List<dynamic>> transformedFields = [];
+  debugPrint(fields.toString());
 
   switch (selectedTable) {
     case 'Department':
+      if (!header.contains('id') || !header.contains('name')){
+        debugPrint('Incorrect header');
+        return false;
+      } 
       for (var row in fields.sublist(1)) {
-        if (!isInt(row[0]) || row[1] is! String){
+        if (row.length != header.length) {
+          debugPrint('Inconsistent row size');
+          return false;
+          }
+           // Inconsistent row size
+        if (row[0] == null || row[1] == null){
+          debugPrint('Null values');
+          return false;
+        } // Null values
+        if (!isInt(row[0])|| row[1] is! String){
           debugPrint('Incorrect types');
-          return null;
-        }
-        transformedFields.add([int.parse(row[0]), row[1]]);
+          return false;
+        } // Incorrect types
       }
       break;
-
     case 'Group':
+      if (!header.contains('id') || !header.contains('name') || !header.contains('departmentId')) return false;
       for (var row in fields.sublist(1)) {
-        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
-          debugPrint('Incorrect types');
-          return null;
-        }
-        transformedFields.add([int.parse(row[0]), row[1], int.parse(row[2])]);
+        if (row.length != header.length) return false;
+        if (row[0] == null || row[1] == null || row[2] == null) return false;
+        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) return false;
       }
       break;
-
     case 'Team':
+      if (!header.contains('id') || !header.contains('name') || !header.contains('groupId')) return false;
       for (var row in fields.sublist(1)) {
-        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
-          debugPrint('Incorrect types');
-          return null;
-        }
-        transformedFields.add([int.parse(row[0]), row[1], int.parse(row[2])]);
+        if (row.length != header.length) return false;
+        if (row[0] == null || row[1] == null || row[2] == null) return false;
+        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) return false;
       }
       break;
-
     case 'Employee':
+      if (!header.contains('id') || !header.contains('firstName') || !header.contains('lastName') || !header.contains('email') || !header.contains('phone')) return false;
       for (var row in fields.sublist(1)) {
+        if (row.length != header.length) {
+          debugPrint('Inconsistent row size');
+          return false;
+        }
+        if (row[0] == null || row[1] == null || row[2] == null || row[3] == null || row[4] == null) {
+          debugPrint('Null values');
+          return false;
+        }
         if (!isInt(row[0]) || row[1] is! String || row[2] is! String || row[3] is! String || row[4] is! String) {
           debugPrint('Incorrect types');
-          return null;
+          return false;
         }
-        transformedFields.add([
-          int.parse(row[0]), row[1], row[2], row[3], row[4],
-          isInt(row[5]) ? int.parse(row[5]) : null,
-          isInt(row[6]) ? int.parse(row[6]) : null,
-          isInt(row[7]) ? int.parse(row[7]) : null,
-          int.parse(row[8])
-        ]);
       }
       break;
   }
-  
-  return transformedFields;
+  return true;
 }
 
 

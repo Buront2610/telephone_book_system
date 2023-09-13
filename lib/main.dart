@@ -312,15 +312,15 @@ Widget _buildCSVReader(Database db) {
           }
 
           // Step 3: Validate data
-          final isValidData = validCsvData(fields, selectedTable); // Implement this function
+          final isValidData = validateCsvData(fields, selectedTable); // Implement this function
           debugPrint("Is valid data: " + isValidData.toString());
           debugPrint("Fields: " + fields.toString());
 
-          if (isValidData == null) {
+          if (!isValidData) {
             // Show error message or dialog
             return;
           }
-          
+
           switch (selectedTable) {
             case 'Department':
               await deleteAllDepartments(db);
@@ -368,69 +368,3 @@ Widget _buildCSVExport(Database db){
 }
 
 }
-// class Group {
-//   final String name;
-//   final List<Team> teams;
-//   final List<Employee> employees;
-
-//   Group(this.name, this.teams, [List<Employee>? employees])
-//   : this.employees = employees ?? [];
-// }
-
-// class Team {
-//   final String name;
-//   final List<Employee> employees;
-
-//   Team(this.name, this.employees);
-// }
-
-// class Employee {
-//   final String name;
-//   final String extension;
-//   final String email;
-//   final String position;
-
-//   Employee(this.name, this.extension, this.email, this.position);
-// }
-
-// class Department {
-//   final String name;
-//   final List<Group> groups;
-
-//   Department(this.name, this.groups);
-// }
-
-// // Dummy data
-// List<Department> departments = [
-//   Department('企画部', [
-//     Group('役員', [], [
-//       Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-//       Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-//       Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-    
-//     ]),
-//     Group('企画総務G', [
-//       Team('Team 1', [
-//         Employee('John Doe', '123', 'test@test.co.jp', 'Manager'),
-//         Employee('Jim Doe', '789','test@test.co.jp', 'president'),
-
-//       ]),
-//       Team('Team 2', [
-//         Employee('Jane Doe', '456', 'test@test.co.jp', 'Manager'),
-//       ]),
-//     ], [
-//       Employee('John Doe', '123','sugoi@test.co.jp', 'Manager'),  // <-- ここをemployeesリストに追加
-//     ]),
-//   ]),
-//   Department('Marketing', [
-//     Group('Group 1', [
-//       Team('Team 1', [
-//         Employee('Jim Doe', '789','test@test.co.jp', 'Manager'),
-//       ]),
-//       Team('Team 2', [
-//         Employee('Jill Doe', '321','test@test.co.jp', 'Manager'),
-//       ]),
-//     ]),
-//   ]),
-// ];
-
