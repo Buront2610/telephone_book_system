@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:anim_search_bar/anim_search_bar.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:sqflite/sqflite.dart';
 import 'db/db.dart'; // Make sure this import path is correct
@@ -304,7 +303,7 @@ Widget _buildCSVReader(Database db) {
         if (result != null && result.files.single.path != null) {
           final input = File(result.files.single.path!).openRead();
           final content = await input.transform(utf8.decoder).join();  // ファイルの全内容を一つのStringに読み込む
-          final lines = content.split(RegExp(r'\r?\n'));  // \r\n または \n で行に分割
+          final lines = content.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();  // \r\n または \n で行に分割
 
           final fields = <List<String>>[];
           for (var line in lines) {

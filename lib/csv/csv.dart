@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import '../db/db.dart';
 
+bool isInt(String? s){
+  if(s == null) return false;
+  return int.tryParse(s) != null;
+}
+
+
+//CSVデータの判定処理
 bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
   if (fields.isEmpty) return false;
 
@@ -27,7 +34,7 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
           debugPrint('Null values');
           return false;
         } // Null values
-        if (row[0] is! int || row[1] is! String){
+        if (!isInt(row[0])|| row[1] is! String){
           debugPrint('Incorrect types');
           return false;
         } // Incorrect types
@@ -38,7 +45,7 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) return false;
         if (row[0] == null || row[1] == null || row[2] == null) return false;
-        if (row[0] is! int || row[1] is! String || row[2] is! int) return false;
+        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) return false;
       }
       break;
     case 'Team':
@@ -46,7 +53,7 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) return false;
         if (row[0] == null || row[1] == null || row[2] == null) return false;
-        if (row[0] is! int || row[1] is! String || row[2] is! int) return false;
+        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) return false;
       }
       break;
     case 'Employee':
@@ -54,7 +61,7 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) return false;
         if (row[0] == null || row[1] == null || row[2] == null || row[3] == null || row[4] == null) return false;
-        if (row[0] is! int || row[1] is! String || row[2] is! String || row[3] is! String || row[4] is! String) return false;
+        if (!isInt(row[0]) || row[1] is! String || row[2] is! String || row[3] is! String || row[4] is! String) return false;
       }
       break;
   }
