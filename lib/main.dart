@@ -306,6 +306,8 @@ Widget _buildCSVReader(Database db) {
           final lines = content.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();  // \r\n または \n で行に分割
 
           final fields = <List<String>>[];
+          var transformFields = <List<dynamic>>[];
+
           for (var line in lines) {
             debugPrint("Line: " + line.toString());
             fields.add(line.split(',').map((e) => e.trim()).toList());
@@ -319,6 +321,10 @@ Widget _buildCSVReader(Database db) {
           if (!isValidData) {
             // Show error message or dialog
             return;
+          }
+          else{
+            transformFields = validateAndTransformCsvData(fields, selectedTable);
+
           }
 
           switch (selectedTable) {

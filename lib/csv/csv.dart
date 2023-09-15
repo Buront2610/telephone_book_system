@@ -78,6 +78,67 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
 }
 
 
+List<List<dynamic>>? validateAndTransformCsvData(List<List<dynamic>> fields, String selectedTable) {
+  if (fields.isEmpty) return null;
+
+  List<dynamic> header = fields.first.map((e) => e.toString().trim()).toList();
+  debugPrint("Header elements:");
+  for (var element in header) {
+    debugPrint("Element: [$element]");
+  }
+
+  List<List<dynamic>> transformedFields = [];
+
+  switch (selectedTable) {
+    case 'Department':
+      for (var row in fields.sublist(1)) {
+        if (!isInt(row[0]) || row[1] is! String){
+          debugPrint('Incorrect types');
+          return null;
+        }
+        transformedFields.add([int.parse(row[0]), row[1]]);
+      }
+      break;
+
+    case 'Group':
+      for (var row in fields.sublist(1)) {
+        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
+          debugPrint('Incorrect types');
+          return null;
+        }
+        transformedFields.add([int.parse(row[0]), row[1], int.parse(row[2])]);
+      }
+      break;
+
+    case 'Team':
+      for (var row in fields.sublist(1)) {
+        if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
+          debugPrint('Incorrect types');
+          return null;
+        }
+        transformedFields.add([int.parse(row[0]), row[1], int.parse(row[2])]);
+      }
+      break;
+
+    case 'Employee':
+      for (var row in fields.sublist(1)) {
+        if (!isInt(row[0]) || row[1] is! String || row[2] is! String || row[3] is! String || row[4] is! String) {
+          debugPrint('Incorrect types');
+          return null;
+        }
+        transformedFields.add([
+          int.parse(row[0]), row[1], row[2], row[3], row[4],
+          isInt(row[5]) ? int.parse(row[5]) : null,
+          isInt(row[6]) ? int.parse(row[6]) : null,
+          isInt(row[7]) ? int.parse(row[7]) : null,
+          int.parse(row[8])
+        ]);
+      }
+      break;
+  }
+  
+  return transformedFields;
+}
 
 
 
