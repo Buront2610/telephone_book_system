@@ -78,8 +78,8 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
 }
 
 
-List<List<dynamic>>? validateAndTransformCsvData(List<List<dynamic>> fields, String selectedTable) {
-  if (fields.isEmpty) return null;
+List<List<dynamic>> validateAndTransformCsvData(List<List<dynamic>> fields, String selectedTable) {
+  if (fields.isEmpty) return [];
 
   List<dynamic> header = fields.first.map((e) => e.toString().trim()).toList();
   debugPrint("Header elements:");
@@ -94,7 +94,7 @@ List<List<dynamic>>? validateAndTransformCsvData(List<List<dynamic>> fields, Str
       for (var row in fields.sublist(1)) {
         if (!isInt(row[0]) || row[1] is! String){
           debugPrint('Incorrect types');
-          return null;
+          return [];
         }
         transformedFields.add([int.parse(row[0]), row[1]]);
       }
@@ -104,7 +104,7 @@ List<List<dynamic>>? validateAndTransformCsvData(List<List<dynamic>> fields, Str
       for (var row in fields.sublist(1)) {
         if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
           debugPrint('Incorrect types');
-          return null;
+          return [];
         }
         transformedFields.add([int.parse(row[0]), row[1], int.parse(row[2])]);
       }
@@ -114,7 +114,7 @@ List<List<dynamic>>? validateAndTransformCsvData(List<List<dynamic>> fields, Str
       for (var row in fields.sublist(1)) {
         if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
           debugPrint('Incorrect types');
-          return null;
+          return [];
         }
         transformedFields.add([int.parse(row[0]), row[1], int.parse(row[2])]);
       }
@@ -124,7 +124,7 @@ List<List<dynamic>>? validateAndTransformCsvData(List<List<dynamic>> fields, Str
       for (var row in fields.sublist(1)) {
         if (!isInt(row[0]) || row[1] is! String || row[2] is! String || row[3] is! String || row[4] is! String) {
           debugPrint('Incorrect types');
-          return null;
+          return [];
         }
         transformedFields.add([
           int.parse(row[0]), row[1], row[2], row[3], row[4],
@@ -180,19 +180,19 @@ class TableSelectionDialog extends StatelessWidget {
 }
 
 List<Department> parseDepartments(List<List<dynamic>> fields) {
-  return fields.skip(1).map((field) => Department(field[0] as int, field[1] as String)).toList();
+  return fields.map((field) => Department(field[0] as int, field[1] as String)).toList();
 }
 
 List<Group> parseGroups(List<List<dynamic>> fields) {
-  return fields.skip(1).map((field) => Group(field[0] as int, field[1] as String, field[2] as int)).toList();
+  return fields.map((field) => Group(field[0] as int, field[1] as String, field[2] as int)).toList();
 }
 
 List<Team> parseTeams(List<List<dynamic>> fields) {
-  return fields.skip(1).map((field) => Team(field[0] as int, field[1] as String, field[2] as int)).toList();
+  return fields.map((field) => Team(field[0] as int, field[1] as String, field[2] as int)).toList();
 }
 
 List<Employee> parseEmployees(List<List<dynamic>> fields) {
-  return fields.skip(1).map((field) => Employee(
+  return fields.map((field) => Employee(
     field[0] as int, field[1] as String, field[2] as String, field[3] as String, field[4] as String,
     departmentId: field[5] as int?, groupId: field[6] as int?, teamId: field[7] as int?, isHide: field[8] == 1 ? true : false
   )).toList();

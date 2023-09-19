@@ -324,26 +324,27 @@ Widget _buildCSVReader(Database db) {
           }
           else{
             transformFields = validateAndTransformCsvData(fields, selectedTable);
-
+            debugPrint(transformFields.toString());
           }
-
-          switch (selectedTable) {
-            case 'Department':
-              await deleteAllDepartments(db);
-              await insertDepartment(db, parseDepartments(fields)); // Implement this function
-              break;
-            case 'Group':
-              await deleteAllGroups(db);
-              await insertGroup(db, parseGroups(fields)); // Implement this function
-              break;
-            case 'Team':
-              await deleteAllTeams(db);
-              await insertTeam(db, parseTeams(fields)); // Implement this function
-              break;
-            case 'Employee':
-              await deleteAllEmployees(db);
-              await insertEmployee(db, parseEmployees(fields)); // Implement this function
-              break;
+          if(transformFields!=[]){
+            switch (selectedTable) {
+              case 'Department':
+                await deleteAllDepartments(db);
+                await insertDepartment(db, parseDepartments(transformFields)); // Implement this function
+                break;
+              case 'Group':
+                await deleteAllGroups(db);
+                await insertGroup(db, parseGroups(transformFields)); // Implement this function
+                break;
+              case 'Team':
+                await deleteAllTeams(db);
+                await insertTeam(db, parseTeams(transformFields)); // Implement this function
+                break;
+              case 'Employee':
+                await deleteAllEmployees(db);
+                await insertEmployee(db, parseEmployees(transformFields)); // Implement this function
+                break;
+            }
           }
         }
       } catch(e) {
