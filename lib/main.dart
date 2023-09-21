@@ -270,110 +270,110 @@ Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, D
     );
   }
 
-  
-Widget _buildEmployeeTile(Employee employee) {
-  return ListTile(
-    leading: Icon(Icons.person, color:Color.fromRGBO(234,244,252,1)),
-    title: Text(employee.name),
-    onTap: () {
-      // Handle employee tap if necessary
-    },
-  );
-}
+    
+  Widget _buildEmployeeTile(Employee employee) {
+    return ListTile(
+      leading: Icon(Icons.person, color:Color.fromRGBO(234,244,252,1)),
+      title: Text(employee.name),
+      onTap: () {
+        // Handle employee tap if necessary
+      },
+    );
+  }
 
-Widget _buildCSVReader(Database db) {
-  return ListTile(
-    leading: Icon(Icons.add_circle_outline, color:Color.fromRGBO(234,244,252,1)),
-    title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
-    onTap: () async{
-      try {
-        // Step 1: Show table selection dialog
-        String? selectedTable = await TableSelectionDialog().show(context);
-        debugPrint("Selected table: " + selectedTable.toString());
-        if (selectedTable == null) return; // User canceled the dialog
+  Widget _buildCSVReader(Database db) {
+    return ListTile(
+      leading: Icon(Icons.add_circle_outline, color:Color.fromRGBO(234,244,252,1)),
+      title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+      onTap: () async{
+        try {
+          // Step 1: Show table selection dialog
+          String? selectedTable = await TableSelectionDialog().show(context);
+          debugPrint("Selected table: " + selectedTable.toString());
+          if (selectedTable == null) return; // User canceled the dialog
 
-        // Step 2: File selection
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['csv'],
-        );
+          // Step 2: File selection
+          FilePickerResult? result = await FilePicker.platform.pickFiles(
+            type: FileType.custom,
+            allowedExtensions: ['csv'],
+          );
 
-        debugPrint("Selected file: " + result.toString());
+          debugPrint("Selected file: " + result.toString());
 
-        if (result != null && result.files.single.path != null) {
-          final input = File(result.files.single.path!).openRead();
-          final content = await input.transform(utf8.decoder).join();  // ファイルの全内容を一つのStringに読み込む
-          final lines = content.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();  // \r\n または \n で行に分割
+          if (result != null && result.files.single.path != null) {
+            final input = File(result.files.single.path!).openRead();
+            final content = await input.transform(utf8.decoder).join();  // ファイルの全内容を一つのStringに読み込む
+            final lines = content.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();  // \r\n または \n で行に分割
 
-          final fields = <List<String>>[];
-          var transformFields = <List<dynamic>>[];
+            final fields = <List<String>>[];
+            var transformFields = <List<dynamic>>[];
 
-          for (var line in lines) {
-            debugPrint("Line: " + line.toString());
-            fields.add(line.split(',').map((e) => e.trim()).toList());
-          }
-
-          // Step 3: Validate data
-          final isValidData = validateCsvData(fields, selectedTable); // Implement this function
-          debugPrint("Is valid data: " + isValidData.toString());
-          debugPrint("Fields: " + fields.toString());
-
-          if (!isValidData) {
-            // Show error message or dialog
-            return;
-          }
-          else{
-            transformFields = validateAndTransformCsvData(fields, selectedTable);
-            debugPrint(transformFields.toString());
-          }
-          if(transformFields!=[]){
-            switch (selectedTable) {
-              case 'Department':
-                await deleteAllDepartments(db);
-                await insertDepartment(db, parseDepartments(transformFields)); // Implement this function
-                break;
-              case 'Group':
-                await deleteAllGroups(db);
-                await insertGroup(db, parseGroups(transformFields)); // Implement this function
-                break;
-              case 'Team':
-                await deleteAllTeams(db);
-                await insertTeam(db, parseTeams(transformFields)); // Implement this function
-                break;
-              case 'Employee':
-                await deleteAllEmployees(db);
-                await insertEmployee(db, parseEmployees(transformFields)); // Implement this function
-                break;
+            for (var line in lines) {
+              debugPrint("Line: " + line.toString());
+              fields.add(line.split(',').map((e) => e.trim()).toList());
             }
+
+            // Step 3: Validate data
+            final isValidData = validateCsvData(fields, selectedTable); // Implement this function
+            debugPrint("Is valid data: " + isValidData.toString());
+            debugPrint("Fields: " + fields.toString());
+
+            if (!isValidData) {
+              // Show error message or dialog
+              return;
+            }
+            else{
+              transformFields = validateAndTransformCsvData(fields, selectedTable);
+              debugPrint(transformFields.toString());
+            }
+            if(transformFields!=[]){
+              switch (selectedTable) {
+                case 'Department':
+                  await deleteAllDepartments(db);
+                  await insertDepartment(db, parseDepartments(transformFields)); // Implement this function
+                  break;
+                case 'Group':
+                  await deleteAllGroups(db);
+                  await insertGroup(db, parseGroups(transformFields)); // Implement this function
+                  break;
+                case 'Team':
+                  await deleteAllTeams(db);
+                  await insertTeam(db, parseTeams(transformFields)); // Implement this function
+                  break;
+                case 'Employee':
+                  await deleteAllEmployees(db);
+                  await insertEmployee(db, parseEmployees(transformFields)); // Implement this function
+                  break;
+              }
+            }
+            //AllEmployeesのアップデート
+            initialize();
           }
-          //AllEmployeesのアップデート
-          initialize();
+        } catch(e) {
+          debugPrint(e.toString());
         }
-      } catch(e) {
-        debugPrint(e.toString());
-      }
-      // Handle employee tap if necessary
-    },
-  );
-}
+        // Handle employee tap if necessary
+      },
+    );
+  }
 
 
 
 
-Widget _buildCSVExport(Database db){
-  return ListTile(
-    leading: Icon(Icons.download, color:Color.fromRGBO(234,244,252,1)),
-    title: Text('データエクスポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
-    onTap: () async{
-      try{
-        exportToCSV(db);
+  Widget _buildCSVExport(Database db){
+    return ListTile(
+      leading: Icon(Icons.download, color:Color.fromRGBO(234,244,252,1)),
+      title: Text('データエクスポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+      onTap: () async{
+        try{
+          exportToCSV(db);
 
-      }
-      catch(e){
-        debugPrint(e.toString());
-      }
-    },
-  );
-}
+        }
+        catch(e){
+          debugPrint(e.toString());
+        }
+      },
+    );
+  }
 
 }
