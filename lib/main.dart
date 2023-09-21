@@ -346,6 +346,8 @@ Widget _buildCSVReader(Database db) {
                 break;
             }
           }
+          //AllEmployeesのアップデート
+          initialize();
         }
       } catch(e) {
         debugPrint(e.toString());
