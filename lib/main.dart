@@ -115,41 +115,54 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text('電話番号一覧アプリ'),
-            SizedBox(width: 20),
-            Expanded(
-              child: AnimSearchBar(
-                width: 400,
-                textController: textController,
-                style: TextStyle(fontStyle: FontStyle.normal),
-                onSuffixTap: () {
-                  setState(() {
-                    textController.clear();
-                    currentEmployees = List.from(originalEmployees);  // リセット
-                  });
-                },
-                rtl: true,
-                onSubmitted: (String value) {
-                  debugPrint("onSubmitted value: " + value);
-                  _filterEmployees(value);
-                },
+    return FutureBuilder(
+      future:initialize(),
+      builder: (context, snapshot) {
+        if(snapshot.connectionState == ConnectionState.done){
+          return Scaffold(
+            appBar: AppBar(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('電話番号一覧アプリ'),
+                  SizedBox(width: 20),
+                  Expanded(
+                    child: AnimSearchBar(
+                      width: 400,
+                      textController: textController,
+                      style: TextStyle(fontStyle: FontStyle.normal),
+                      onSuffixTap: () {
+                        setState(() {
+                          textController.clear();
+                          currentEmployees = List.from(originalEmployees);  // リセット
+                        });
+                      },
+                      rtl: true,
+                      onSubmitted: (String value) {
+                        debugPrint("onSubmitted value: " + value);
+                        _filterEmployees(value);
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-      body: Row(
-        children: [
-          _buildSideBar(),
-          _buildEmployeeList(),
-        ],
-      ),
+            body: Row(
+              children: [
+                _buildSideBar(),
+                _buildEmployeeList(),
+              ],
+            ),
+          );
+        }else{
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+      }
     );
   }
 
