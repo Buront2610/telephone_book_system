@@ -45,27 +45,19 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     debugPrint('start');
-    initialize();
   }
 
   Future<void> initialize() async {
-    final database = await initializeDB();
-    setState(() {
-      db = database;
-      debugPrintDatabaseContents(db);
-    });
-    final updatedDepartments = await updateDepartmentsFromDB(db);
-
-    setState(() {
-      departments = updatedDepartments;
-      _resetAllEmployees();
-    });
+    db = await initializeDB();
+    // setStateを削除
+    debugPrintDatabaseContents(db);
+    departments = await updateDepartmentsFromDB(db);
+    _resetAllEmployees();
     for (var department in departments) {
       exploreDepartment(department);
     }
     debugPrint('end');
   }
-
 
   // 全てのDepartment（およびそれに属するGroupとTeam）からEmployeeを再取得してallEmployeesをリセットする関数
   void _resetAllEmployees() {

@@ -544,7 +544,7 @@ Future<void> saveCsvToFile(String csvContent, String fileName, String directory)
 
 void exportToCSV(Database db) async {
   // パーミッションをリクエスト
-  // PermissionStatus status = await Permission.storage.request();
+  PermissionStatus status = await Permission.storage.request();
 
   // if (status.isGranted) {
     // ユーザーにディレクトリを選ばせる
@@ -581,8 +581,10 @@ Future<void> requestPermission(Permission permission) async {
   PermissionStatus status = await permission.request();
   if (status.isGranted) {
     // パーミッションが許可された
+    debugPrint("Permission granted");
   } else {
     // パーミッションが拒否された
+    debugPrint("Permission denied");
   }
 }
 
