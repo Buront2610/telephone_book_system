@@ -5,8 +5,9 @@ import 'package:anim_search_bar/anim_search_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:sqflite/sqflite.dart';
-import 'db/db.dart'; // Make sure this import path is correct
+import 'db/db.dart'; 
 import 'csv/csv.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -34,7 +35,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late final Database db;
+  Database? _db;
+  late Future<void> initialization;
   late List<Department> departments =[];
   List<Employee> currentEmployees = [];
   List<Employee> originalEmployees = [];
@@ -44,112 +46,102 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    initialization = initialize();
     debugPrint('start');
-    initialize();
   }
 
   Future<void> initialize() async {
-    final database = await initializeDB();
-    setState(() {
-      db = database;
-      debugPrintDatabaseContents(db);
-    });
-    final updatedDepartments = await updateDepartmentsFromDB(db);
-
-    setState(() {
-      departments = updatedDepartments;
-      _resetAllEmployees();
-    });
+    if (_db == null) {
+      _db = await initializeDB();
+    }
+    Database db = _db!;
+    departments = await updateDepartmentsFromDB(db);
+    _resetAllEmployees();
     for (var department in departments) {
       exploreDepartment(department);
     }
-    debugPrint('end');
   }
 
-
-  // 全てのDepartment（およびそれに属するGroupとTeam）からEmployeeを再取得してallEmployeesをリセットする関数
   void _resetAllEmployees() {
     allEmployees.clear();
     for (var department in departments) {
-      allEmployees.addAll(department.employees);  // Departmentに直接属するEmployee
+      allEmployees.addAll(department.employees); 
       for (var group in department.groups) {
-        allEmployees.addAll(group.employees);  // Groupに属するEmployee
+        allEmployees.addAll(group.employees); 
         for (var team in group.teams) {
-          allEmployees.addAll(team.employees);  // Teamに属するEmployee
+          allEmployees.addAll(team.employees);
         }
       }
     }
-    // 重複を削除
     allEmployees = allEmployees.toSet().toList();
   }
 
-  // Add your initializeDB function here
   void _filterEmployees(String query) {
     debugPrint("Query: " + query);
     if (query.isEmpty) {
-      _resetAllEmployees(); // 全てのEmployeeを再取得してリセット
+      _resetAllEmployees(); 
       setState(() {
-        currentEmployees = List.from(allEmployees);  // リセット
+        currentEmployees = List.from(allEmployees);  
       });
     } else {
       setState(() {
         currentEmployees = allEmployees
-            .where((employee) =>
-                employee.name.toLowerCase().contains(query.toLowerCase()))
+            .where((employee) => employee.name.toLowerCase().contains(query.toLowerCase()))
             .toList();
       });
-      for (var employee in currentEmployees) {
-        debugPrint("name:" + employee.name);
-      }
-      for (var employee in allEmployees) {
-        debugPrint("name:" + employee.name);
-      }
     }
-      for (var employee in currentEmployees) {
-        debugPrint("name:" + employee.name);
-      }
-      for (var employee in allEmployees) {
-        debugPrint("name:" + employee.name);
-      }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text('電話番号一覧アプリ'),
-            SizedBox(width: 20),
-            Expanded(
-              child: AnimSearchBar(
-                width: 400,
-                textController: textController,
-                style: TextStyle(fontStyle: FontStyle.normal),
-                onSuffixTap: () {
-                  setState(() {
-                    textController.clear();
-                    currentEmployees = List.from(originalEmployees);  // リセット
-                  });
-                },
-                rtl: true,
-                onSubmitted: (String value) {
-                  debugPrint("onSubmitted value: " + value);
-                  _filterEmployees(value);
-                },
+    return FutureBuilder(
+      future: initialization,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('電話番号一覧アプリ'),
+                  SizedBox(width: 20),
+                  Expanded(
+                    child: AnimSearchBar(
+                      width: 400,
+                      textController: textController,
+                      style: TextStyle(fontStyle: FontStyle.normal),
+                      onSuffixTap: () {
+                        setState(() {
+                          textController.clear();
+                          currentEmployees = List.from(originalEmployees);  
+                        });
+                      },
+                      rtl: true,
+                      onSubmitted: (String value) {
+                        debugPrint("onSubmitted value: " + value);
+                        _filterEmployees(value);
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-      body: Row(
-        children: [
-          _buildSideBar(),
-          _buildEmployeeList(),
-        ],
-      ),
+            body: Row(
+              children: [
+                _buildSideBar(),
+                _buildEmployeeList(),
+              ],
+            ),
+          );
+        } else {
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+      }
     );
   }
 
@@ -160,7 +152,6 @@ class _MyHomePageState extends State<MyHomePage> {
         color: Color.fromRGBO(23, 24, 75, 1),
         child: ListView(
           children: [
-
             ListView.builder(
               shrinkWrap: true,
               itemCount: departments.length,
@@ -169,20 +160,17 @@ class _MyHomePageState extends State<MyHomePage> {
                   departments[index].name,
                   departments[index].groups.map((group) => _buildGroupTile(group)).toList(),
                   Icons.business,
-                  departments[index], // Pass the Department object here
+                  departments[index], 
                 );
               },
             ),
-
-
-              _buildCSVReader(db),
-              _buildCSVExport(db),
+            _buildCSVReader(),
+            _buildCSVExport(),
           ],
         ),
       ),
     );
   }
-
 
   Widget _buildEmployeeList() {
     return Expanded(
@@ -194,58 +182,51 @@ class _MyHomePageState extends State<MyHomePage> {
           itemBuilder: (context, index) {
             return Card(
               margin: EdgeInsets.all(8.0),
-              child:ListTile(
-              leading: Icon(Icons.person),
-              title:  Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
-                  Text('役職: ${currentEmployees[index].position}', style: TextStyle(fontStyle: FontStyle.normal)),
-                  Text('電話番号: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
-                  Text('メールアドレス: ${currentEmployees[index].email}', style: TextStyle(fontStyle: FontStyle.normal)),
-                ],
-              ),
-            ));
+              child: ListTile(
+                leading: Icon(Icons.person),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
+                    Text('役職: ${currentEmployees[index].position}', style: TextStyle(fontStyle: FontStyle.normal)),
+                    Text('電話番号: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
+                    Text('メールアドレス: ${currentEmployees[index].email}', style: TextStyle(fontStyle: FontStyle.normal)),
+                  ],
+                ),
+              )
+            );
           },
         ),
       ),
     );
   }
 
-Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, Department department) {
-  return ExpansionTile(
-    leading: Icon(icon, color: Color.fromRGBO(234,244,252,1)),
-    title: Text(title, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
-    children: children,
-    onExpansionChanged: (bool expanding) {
-      if (expanding) {
-        setState(() {
-          currentEmployees = department.employees;
-          originalEmployees = List.from(currentEmployees);  // 元のリストを保存
-        });
-      }
-    },
-  );
-}
-
-
+  Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, Department department) {
+    return ExpansionTile(
+      leading: Icon(icon, color: Color.fromRGBO(234,244,252,1)),
+      title: Text(title, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      children: children,
+      onExpansionChanged: (bool expanding) {
+        if (expanding) {
+          setState(() {
+            currentEmployees = department.employees;
+            originalEmployees = List.from(currentEmployees);  
+          });
+        }
+      },
+    );
+  }
 
   Widget _buildGroupTile(Group group) {
-    // Teams and employees under this group
     List<Widget> children = [];
-
-    // Add team tiles
     children.addAll(group.teams.map((team) => _buildTeamTile(team)).toList());
 
     return ExpansionTile(
       leading: Icon(Icons.group, color: Color.fromRGBO(204, 226, 243, 1)),
-      title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+      title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
       children: children,
       onExpansionChanged: (bool expanding) {
         if (expanding) { 
-          // only when the tile is being expanded
-          print("Expanding, new employee list length: ${group.employees.length}");
-
           setState(() {
             currentEmployees = group.employees;
           });
@@ -254,13 +235,10 @@ Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, D
     );
   }
 
-
-
-
   Widget _buildTeamTile(Team team) {
     return ListTile(
-      leading: Icon(Icons.group, color:Color.fromRGBO(234,244,252,1)),
-      title: Text(team.name, style: TextStyle(fontStyle: FontStyle.normal ,fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
+      leading: Icon(Icons.group, color: Color.fromRGBO(234,244,252,1)),
+      title: Text(team.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
       selected: currentEmployees == team.employees,
       onTap: () {
         setState(() {
@@ -270,23 +248,18 @@ Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, D
     );
   }
 
-    
-  Widget _buildEmployeeTile(Employee employee) {
+  Widget _buildCSVReader() {
     return ListTile(
-      leading: Icon(Icons.person, color:Color.fromRGBO(234,244,252,1)),
-      title: Text(employee.name),
-      onTap: () {
-        // Handle employee tap if necessary
-      },
-    );
-  }
-
-  Widget _buildCSVReader(Database db) {
-    return ListTile(
-      leading: Icon(Icons.add_circle_outline, color:Color.fromRGBO(234,244,252,1)),
-      title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
-      onTap: () async{
+      leading: Icon(Icons.add_circle_outline, color: Color.fromRGBO(234,244,252,1)),
+      title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      onTap: () async {
         try {
+          if (_db == null) {
+            debugPrint("データベースが初期化されていません。");
+            return;
+          }
+          Database db = _db!;
+
           // Step 1: Show table selection dialog
           String? selectedTable = await TableSelectionDialog().show(context);
           debugPrint("Selected table: " + selectedTable.toString());
@@ -302,8 +275,8 @@ Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, D
 
           if (result != null && result.files.single.path != null) {
             final input = File(result.files.single.path!).openRead();
-            final content = await input.transform(utf8.decoder).join();  // ファイルの全内容を一つのStringに読み込む
-            final lines = content.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();  // \r\n または \n で行に分割
+            final content = await input.transform(utf8.decoder).join();
+            final lines = content.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
 
             final fields = <List<String>>[];
             var transformFields = <List<dynamic>>[];
@@ -314,66 +287,66 @@ Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, D
             }
 
             // Step 3: Validate data
-            final isValidData = validateCsvData(fields, selectedTable); // Implement this function
+            final isValidData = validateCsvData(fields, selectedTable);
             debugPrint("Is valid data: " + isValidData.toString());
             debugPrint("Fields: " + fields.toString());
 
             if (!isValidData) {
               // Show error message or dialog
               return;
-            }
-            else{
+            } else {
               transformFields = validateAndTransformCsvData(fields, selectedTable);
               debugPrint(transformFields.toString());
             }
-            if(transformFields!=[]){
+
+            if (transformFields.isNotEmpty) {
               switch (selectedTable) {
                 case 'Department':
                   await deleteAllDepartments(db);
-                  await insertDepartment(db, parseDepartments(transformFields)); // Implement this function
+                  await insertDepartment(db, parseDepartments(transformFields));
                   break;
                 case 'Group':
                   await deleteAllGroups(db);
-                  await insertGroup(db, parseGroups(transformFields)); // Implement this function
+                  await insertGroup(db, parseGroups(transformFields));
                   break;
                 case 'Team':
                   await deleteAllTeams(db);
-                  await insertTeam(db, parseTeams(transformFields)); // Implement this function
+                  await insertTeam(db, parseTeams(transformFields));
                   break;
                 case 'Employee':
                   await deleteAllEmployees(db);
-                  await insertEmployee(db, parseEmployees(transformFields)); // Implement this function
+                  await insertEmployee(db, parseEmployees(transformFields));
                   break;
               }
             }
-            //AllEmployeesのアップデート
-            initialize();
+
+            setState(() {
+              initialization = initialize();
+            });
           }
-        } catch(e) {
+        } catch (e) {
           debugPrint(e.toString());
         }
-        // Handle employee tap if necessary
       },
     );
   }
 
-
-
-
-  Widget _buildCSVExport(Database db){
+  Widget _buildCSVExport() {
     return ListTile(
-      leading: Icon(Icons.download, color:Color.fromRGBO(234,244,252,1)),
-      title: Text('データエクスポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color:Color.fromRGBO(234,244,252,1))),
-      onTap: () async{
-        try{
+      leading: Icon(Icons.download, color: Color.fromRGBO(234,244,252,1)),
+      title: Text('データエクスポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      onTap: () async {
+        try {
+          if (_db == null) {
+            debugPrint("データベースが初期化されていません。");
+            return;
+          }
+          Database db = _db!;
           exportToCSV(db);
-
-        }
-        catch(e){
+        } catch (e) {
           debugPrint(e.toString());
         }
       },
     );
   }
-
 }
