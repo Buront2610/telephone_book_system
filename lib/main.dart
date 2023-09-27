@@ -5,7 +5,7 @@ import 'package:anim_search_bar/anim_search_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:sqflite/sqflite.dart';
-import 'db/db.dart'; 
+import 'db/db.dart';
 import 'csv/csv.dart';
 
 void main() {
@@ -37,7 +37,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   Database? _db;
   late Future<void> initialization;
-  late List<Department> departments =[];
+  late List<Department> departments = [];
   List<Employee> currentEmployees = [];
   List<Employee> originalEmployees = [];
   List<Employee> allEmployees = [];
@@ -65,9 +65,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void _resetAllEmployees() {
     allEmployees.clear();
     for (var department in departments) {
-      allEmployees.addAll(department.employees); 
+      allEmployees.addAll(department.employees);
       for (var group in department.groups) {
-        allEmployees.addAll(group.employees); 
+        allEmployees.addAll(group.employees);
         for (var team in group.teams) {
           allEmployees.addAll(team.employees);
         }
@@ -79,14 +79,15 @@ class _MyHomePageState extends State<MyHomePage> {
   void _filterEmployees(String query) {
     debugPrint("Query: " + query);
     if (query.isEmpty) {
-      _resetAllEmployees(); 
+      _resetAllEmployees();
       setState(() {
-        currentEmployees = List.from(allEmployees);  
+        currentEmployees = List.from(allEmployees);
       });
     } else {
       setState(() {
         currentEmployees = allEmployees
-            .where((employee) => employee.name.toLowerCase().contains(query.toLowerCase()))
+            .where((employee) =>
+                employee.name.toLowerCase().contains(query.toLowerCase()))
             .toList();
       });
     }
@@ -95,54 +96,53 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: initialization,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('電話番号一覧アプリ'),
-                  SizedBox(width: 20),
-                  Expanded(
-                    child: AnimSearchBar(
-                      width: 400,
-                      textController: textController,
-                      style: TextStyle(fontStyle: FontStyle.normal),
-                      onSuffixTap: () {
-                        setState(() {
-                          textController.clear();
-                          currentEmployees = List.from(originalEmployees);  
-                        });
-                      },
-                      rtl: true,
-                      onSubmitted: (String value) {
-                        debugPrint("onSubmitted value: " + value);
-                        _filterEmployees(value);
-                      },
+        future: initialization,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Scaffold(
+              appBar: AppBar(
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text('電話番号一覧アプリ'),
+                    SizedBox(width: 20),
+                    Expanded(
+                      child: AnimSearchBar(
+                        width: 400,
+                        textController: textController,
+                        style: TextStyle(fontStyle: FontStyle.normal),
+                        onSuffixTap: () {
+                          setState(() {
+                            textController.clear();
+                            currentEmployees = List.from(originalEmployees);
+                          });
+                        },
+                        rtl: true,
+                        onSubmitted: (String value) {
+                          debugPrint("onSubmitted value: " + value);
+                          _filterEmployees(value);
+                        },
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
+              body: Row(
+                children: [
+                  _buildSideBar(),
+                  _buildEmployeeList(),
                 ],
               ),
-            ),
-            body: Row(
-              children: [
-                _buildSideBar(),
-                _buildEmployeeList(),
-              ],
-            ),
-          );
-        } else {
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-      }
-    );
+            );
+          } else {
+            return Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+        });
   }
 
   Widget _buildSideBar() {
@@ -152,17 +152,18 @@ class _MyHomePageState extends State<MyHomePage> {
         color: Color.fromRGBO(23, 24, 75, 1),
         child: ListView(
           children: [
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: departments.length,
-              itemBuilder: (context, index) {
+            Column(
+              children: List.generate(departments.length, (index) {
                 return _buildExpansionTile(
                   departments[index].name,
-                  departments[index].groups.map((group) => _buildGroupTile(group)).toList(),
+                  departments[index]
+                      .groups
+                      .map((group) => _buildGroupTile(group))
+                      .toList(),
                   Icons.business,
-                  departments[index], 
+                  departments[index],
                 );
-              },
+              }),
             ),
             _buildCSVReader(),
             _buildCSVExport(),
@@ -181,36 +182,44 @@ class _MyHomePageState extends State<MyHomePage> {
           itemCount: currentEmployees.length,
           itemBuilder: (context, index) {
             return Card(
-              margin: EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: Icon(Icons.person),
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(currentEmployees[index].name, style: Theme.of(context).textTheme.headline5),
-                    Text('役職: ${currentEmployees[index].position}', style: TextStyle(fontStyle: FontStyle.normal)),
-                    Text('電話番号: ${currentEmployees[index].extension}', style: TextStyle(fontStyle: FontStyle.normal)),
-                    Text('メールアドレス: ${currentEmployees[index].email}', style: TextStyle(fontStyle: FontStyle.normal)),
-                  ],
-                ),
-              )
-            );
+                margin: EdgeInsets.all(8.0),
+                child: ListTile(
+                  leading: Icon(Icons.person),
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(currentEmployees[index].name,
+                          style: Theme.of(context).textTheme.headline5),
+                      Text('役職: ${currentEmployees[index].position}',
+                          style: TextStyle(fontStyle: FontStyle.normal)),
+                      Text('電話番号: ${currentEmployees[index].extension}',
+                          style: TextStyle(fontStyle: FontStyle.normal)),
+                      Text('メールアドレス: ${currentEmployees[index].email}',
+                          style: TextStyle(fontStyle: FontStyle.normal)),
+                    ],
+                  ),
+                ));
           },
         ),
       ),
     );
   }
 
-  Widget _buildExpansionTile(String title, List<Widget> children, IconData icon, Department department) {
+  Widget _buildExpansionTile(String title, List<Widget> children, IconData icon,
+      Department department) {
     return ExpansionTile(
-      leading: Icon(icon, color: Color.fromRGBO(234,244,252,1)),
-      title: Text(title, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      leading: Icon(icon, color: Color.fromRGBO(234, 244, 252, 1)),
+      title: Text(title,
+          style: TextStyle(
+              fontStyle: FontStyle.normal,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(234, 244, 252, 1))),
       children: children,
       onExpansionChanged: (bool expanding) {
         if (expanding) {
           setState(() {
             currentEmployees = department.employees;
-            originalEmployees = List.from(currentEmployees);  
+            originalEmployees = List.from(currentEmployees);
           });
         }
       },
@@ -223,10 +232,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return ExpansionTile(
       leading: Icon(Icons.group, color: Color.fromRGBO(204, 226, 243, 1)),
-      title: Text(group.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      title: Text(group.name,
+          style: TextStyle(
+              fontStyle: FontStyle.normal,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(234, 244, 252, 1))),
       children: children,
       onExpansionChanged: (bool expanding) {
-        if (expanding) { 
+        if (expanding) {
           setState(() {
             currentEmployees = group.employees;
           });
@@ -237,8 +250,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildTeamTile(Team team) {
     return ListTile(
-      leading: Icon(Icons.group, color: Color.fromRGBO(234,244,252,1)),
-      title: Text(team.name, style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      leading: Icon(Icons.group, color: Color.fromRGBO(234, 244, 252, 1)),
+      title: Text(team.name,
+          style: TextStyle(
+              fontStyle: FontStyle.normal,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(234, 244, 252, 1))),
       selected: currentEmployees == team.employees,
       onTap: () {
         setState(() {
@@ -250,8 +267,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildCSVReader() {
     return ListTile(
-      leading: Icon(Icons.add_circle_outline, color: Color.fromRGBO(234,244,252,1)),
-      title: Text('データインポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      leading: Icon(Icons.add_circle_outline,
+          color: Color.fromRGBO(234, 244, 252, 1)),
+      title: Text('データインポート',
+          style: TextStyle(
+              fontStyle: FontStyle.normal,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(234, 244, 252, 1))),
       onTap: () async {
         try {
           if (_db == null) {
@@ -276,7 +298,10 @@ class _MyHomePageState extends State<MyHomePage> {
           if (result != null && result.files.single.path != null) {
             final input = File(result.files.single.path!).openRead();
             final content = await input.transform(utf8.decoder).join();
-            final lines = content.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty).toList();
+            final lines = content
+                .split(RegExp(r'\r?\n'))
+                .where((line) => line.trim().isNotEmpty)
+                .toList();
 
             final fields = <List<String>>[];
             var transformFields = <List<dynamic>>[];
@@ -295,7 +320,8 @@ class _MyHomePageState extends State<MyHomePage> {
               // Show error message or dialog
               return;
             } else {
-              transformFields = validateAndTransformCsvData(fields, selectedTable);
+              transformFields =
+                  validateAndTransformCsvData(fields, selectedTable);
               debugPrint(transformFields.toString());
             }
 
@@ -333,8 +359,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildCSVExport() {
     return ListTile(
-      leading: Icon(Icons.download, color: Color.fromRGBO(234,244,252,1)),
-      title: Text('データエクスポート', style: TextStyle(fontStyle: FontStyle.normal, fontWeight: FontWeight.bold, color: Color.fromRGBO(234,244,252,1))),
+      leading: Icon(Icons.download, color: Color.fromRGBO(234, 244, 252, 1)),
+      title: Text('データエクスポート',
+          style: TextStyle(
+              fontStyle: FontStyle.normal,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(234, 244, 252, 1))),
       onTap: () async {
         try {
           if (_db == null) {
