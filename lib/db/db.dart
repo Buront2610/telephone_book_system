@@ -89,7 +89,6 @@ class Employee {
   }
 }
 
-
 // Create Table
 Future<void> createTables(Database db) async {
   await db.execute('''
@@ -134,7 +133,32 @@ Future<void> createTables(Database db) async {
     )
   ''');
 
-  await db.execute()
+  await db.execute('''
+    CREATE TABLE employee_department(
+      employee_id INTEGER NOT NULL,
+      department_id INTEGER NOT NULL,
+      FOREIGN KEY(employee_id) REFERENCES employee(id),
+      FOREIGN KEY(department_id) REFERENCES department(id)
+    )
+  ''');
+
+  await db.execute('''
+    CREATE TABLE employee_group(
+      employee_id INTEGER NOT NULL,
+      group_id INTEGER NOT NULL,
+      FOREIGN KEY(employee_id) REFERENCES employee(id),
+      FOREIGN KEY(group_id) REFERENCES group_table(id)
+    )
+  ''');
+
+  await db.execute('''
+    CREATE TABLE employee_team(
+      employee_id INTEGER NOT NULL,
+      team_id INTEGER NOT NULL,
+      FOREIGN KEY(employee_id) REFERENCES employee(id),
+      FOREIGN KEY(team_id) REFERENCES team(id)
+    )
+  ''');
 }
 
 // CRUD with Hard-coded Data
@@ -222,20 +246,49 @@ Future<void> insertEmployee(Database db, employeeList) async {
   for (var employee in employeeList) {
     await db.insert('employee', employee.toDatabaseMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
+
+    for (var departmentId in employee.departmentIds!) {
+      await db.insert('employee_department',
+          {'employee_id': employee.id, 'department_id': departmentId});
+    }
+
+    for (var groupId in employee.groupIds!) {
+      await db.insert(
+          'employee_group', {'employee_id': employee.id, 'group_id': groupId});
+    }
+
+    for (var teamId in employee.teamIds!) {
+      await db.insert(
+          'employee_team', {'employee_id': employee.id, 'team_id': teamId});
+    }
   }
 }
 
-Future<void> testInsertEmployee(Database db) async {
+// CRUD with Hard-coded Data
+Future<void> setupInsertEmployee(Database db) async {
   final employeeList = [
-    Employee(1, 'Jim Doe', '代表取締役社長', '789', 'test@co.jp', departmentId: 1),
-    Employee(2, 'John Doe', '主任', '123', 'test@co.jp',
-        departmentId: 2, groupId: 1),
-    Employee(3, 'Jane Doe', '主任', '456', 'test@co.jp',
-        departmentId: 2, groupId: 3),
+    Employee(1, 'Jim Doe', '代表取締役社長', '789', 'test@co.jp',
+        departmentIds: [1], groupIds: [1], teamIds: [1]),
+    // ... 他の従業員データ ...
   ];
   for (var employee in employeeList) {
     await db.insert('employee', employee.toDatabaseMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
+
+    for (var departmentId in employee.departmentIds!) {
+      await db.insert('employee_department',
+          {'employee_id': employee.id, 'department_id': departmentId});
+    }
+
+    for (var groupId in employee.groupIds!) {
+      await db.insert(
+          'employee_group', {'employee_id': employee.id, 'group_id': groupId});
+    }
+
+    for (var teamId in employee.teamIds!) {
+      await db.insert(
+          'employee_team', {'employee_id': employee.id, 'team_id': teamId});
+    }
   }
 }
 
@@ -281,19 +334,43 @@ Future<List<Team>> getTeams(Database db) async {
 Future<List<Employee>> getEmployees(Database db) async {
   try {
     final List<Map<String, dynamic>> maps = await db.query('employee');
-    return List.generate(maps.length, (i) {
+
+    // Future.waitを使用して、全てのEmployeeオブジェクトが生成されるのを待つ
+    return await Future.wait(maps.map((map) async {
+      int employeeId = map['id'] as int;
+
+      final List<Map<String, dynamic>> departmentMaps = await db.query(
+          'employee_department',
+          where: 'employee_id = ?',
+          whereArgs: [employeeId]);
+      List<int> departmentIds =
+          departmentMaps.map((map) => map['department_id'] as int).toList();
+
+      final List<Map<String, dynamic>> groupMaps = await db.query(
+          'employee_group',
+          where: 'employee_id = ?',
+          whereArgs: [employeeId]);
+      List<int> groupIds =
+          groupMaps.map((map) => map['group_id'] as int).toList();
+
+      final List<Map<String, dynamic>> teamMaps = await db.query(
+          'employee_team',
+          where: 'employee_id = ?',
+          whereArgs: [employeeId]);
+      List<int> teamIds = teamMaps.map((map) => map['team_id'] as int).toList();
+
       return Employee(
-        maps[i]['id'] as int,
-        maps[i]['name'] as String,
-        maps[i]['position'] as String,
-        maps[i]['extension'] as String,
-        maps[i]['email'] as String,
-        departmentId: maps[i]['department_id'] as int?,
-        groupId: maps[i]['group_id'] as int?,
-        teamId: maps[i]['team_id'] as int?,
-        isHide: maps[i]['is_hide'] == 1 ? true : false,
+        employeeId,
+        map['name'] as String,
+        map['position'] as String,
+        map['extension'] as String,
+        map['email'] as String,
+        departmentIds: departmentIds,
+        groupIds: groupIds,
+        teamIds: teamIds,
+        isHide: map['is_hide'] == 1 ? true : false,
       );
-    });
+    }).toList());
   } catch (e) {
     print("Error while getting employees: $e");
     return [];
@@ -410,26 +487,17 @@ Future<List<Department>> updateDepartmentsFromDB(Database db) async {
       group.teams = dbTeams.where((t) => t.groupId == group.id).toList();
       group.teams.forEach((team) {
         team.employees = dbEmployees
-            .where((e) =>
-                e.teamId == team.id &&
-                e.groupId == group.id &&
-                e.departmentId == dbDept.id)
+            .where((e) => e.teamIds?.contains(team.id) ?? false)
             .toList();
       });
       group.employees = dbEmployees
-          .where((e) =>
-              e.groupId == group.id &&
-              e.departmentId == dbDept.id &&
-              e.teamId == null)
+          .where((e) => e.groupIds?.contains(group.id) ?? false)
           .toList();
     });
 
     // Get employees belonging directly to this department (not part of any group or team)
     List<Employee> deptEmployees = dbEmployees
-        .where((e) =>
-            e.departmentId == dbDept.id &&
-            e.groupId == null &&
-            e.teamId == null)
+        .where((e) => e.departmentIds?.contains(dbDept.id) ?? false)
         .toList();
 
     return Department(dbDept.id, dbDept.name,
@@ -437,7 +505,7 @@ Future<List<Department>> updateDepartmentsFromDB(Database db) async {
   }).toList();
 
   for (var dept in departments) {
-    exploreDepartment(dept); // debugPrint を exploreDepartment 関数で置換
+    exploreDepartment(dept);
   }
   return departments;
 }
@@ -614,7 +682,7 @@ Future<Database> initializeDB() async {
     await setupInsertDepartment(database);
     await setupInsertGroup(database);
     await setupInsertTeam(database);
-    await testInsertEmployee(database);
+    await setupInsertEmployee(database);
     // Debug print the database contents
     await debugPrintDatabaseContents(database);
     debugPrint("Database created");
