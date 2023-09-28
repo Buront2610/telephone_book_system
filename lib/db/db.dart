@@ -66,13 +66,13 @@ class Employee {
   final String position;
   final String extension;
   final String email;
-  final int? departmentId;
-  final int? groupId;
-  final int? teamId;
+  final List<int>? departmentIds;
+  final List<int>? groupIds;
+  final List<int>? teamIds;
   final bool isHide;
 
   Employee(this.id, this.name, this.position, this.extension, this.email,
-      {this.departmentId, this.groupId, this.teamId, this.isHide = false});
+      {this.departmentIds, this.groupIds, this.teamIds, this.isHide = false});
 
   Map<String, dynamic> toDatabaseMap() {
     return {
@@ -81,13 +81,14 @@ class Employee {
       'position': position,
       'extension': extension,
       'email': email,
-      'department_id': departmentId,
-      'group_id': groupId,
-      'team_id': teamId,
+      'department_ids': departmentIds?.join(',') ?? '',
+      'group_ids': groupIds?.join(',') ?? '',
+      'team_ids': teamIds?.join(',') ?? '',
       'is_hide': isHide ? 1 : 0,
     };
   }
 }
+
 
 // Create Table
 Future<void> createTables(Database db) async {
@@ -132,6 +133,8 @@ Future<void> createTables(Database db) async {
       FOREIGN KEY(team_id) REFERENCES team(id)
     )
   ''');
+
+  await db.execute()
 }
 
 // CRUD with Hard-coded Data
