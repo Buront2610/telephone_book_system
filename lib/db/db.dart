@@ -81,9 +81,6 @@ class Employee {
       'position': position,
       'extension': extension,
       'email': email,
-      'department_ids': departmentIds?.join(',') ?? '',
-      'group_ids': groupIds?.join(',') ?? '',
-      'team_ids': teamIds?.join(',') ?? '',
       'is_hide': isHide ? 1 : 0,
     };
   }
@@ -269,6 +266,13 @@ Future<void> setupInsertEmployee(Database db) async {
   final employeeList = [
     Employee(1, 'Jim Doe', '代表取締役社長', '789', 'test@co.jp',
         departmentIds: [1], groupIds: [1], teamIds: [1]),
+    // 新しい従業員データ
+    Employee(2, 'Jane Smith', '技術者', '123', 'jane@co.jp',
+        departmentIds: [2, 3], groupIds: [4, 5], teamIds: [1, 2]),
+    Employee(3, 'John Doe', '営業', '456', 'john@co.jp',
+        departmentIds: [2], groupIds: [2, 3], teamIds: [3, 4]),
+    Employee(4, 'Mary Smith', '技術者', '789', 'Mary@co.jp,',
+        departmentIds: [2], groupIds: [4, 5], teamIds: []),
     // ... 他の従業員データ ...
   ];
   for (var employee in employeeList) {
