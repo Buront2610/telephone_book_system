@@ -20,8 +20,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: Color.fromRGBO(23, 24, 75, 1),
         textTheme: TextTheme(
-          headline5: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-          subtitle1: TextStyle(fontSize: 18.0, fontStyle: FontStyle.italic),
+          headline5: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+          subtitle1: TextStyle(fontSize: 20.0, fontStyle: FontStyle.italic),
         ),
       ),
       home: MyHomePage(),
@@ -105,7 +105,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text('電話番号一覧アプリ'),
+                    Text('電話番号一覧アプリ',
+                        style: TextStyle(
+                            fontStyle: FontStyle.normal, fontSize: 20.0)),
                     SizedBox(width: 20),
                     Expanded(
                       child: AnimSearchBar(
@@ -191,11 +193,14 @@ class _MyHomePageState extends State<MyHomePage> {
                       Text(currentEmployees[index].name,
                           style: Theme.of(context).textTheme.headline5),
                       Text('役職: ${currentEmployees[index].position}',
-                          style: TextStyle(fontStyle: FontStyle.normal)),
-                      Text('電話番号: ${currentEmployees[index].extension}',
-                          style: TextStyle(fontStyle: FontStyle.normal)),
-                      Text('メールアドレス: ${currentEmployees[index].email}',
-                          style: TextStyle(fontStyle: FontStyle.normal)),
+                          style: TextStyle(
+                              fontStyle: FontStyle.normal, fontSize: 20.0)),
+                      Text('内線番号（通常・携帯）: ${currentEmployees[index].extension}',
+                          style: TextStyle(
+                              fontStyle: FontStyle.normal, fontSize: 20.0)),
+                      // Text('メールアドレス: ${currentEmployees[index].email}',
+                      //     style: TextStyle(
+                      //         fontStyle: FontStyle.normal, fontSize: 18.0)),
                     ],
                   ),
                 ));
@@ -213,6 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
           style: TextStyle(
               fontStyle: FontStyle.normal,
               fontWeight: FontWeight.bold,
+              fontSize: 20.0,
               color: Color.fromRGBO(234, 244, 252, 1))),
       children: children,
       onExpansionChanged: (bool expanding) {
@@ -236,6 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
           style: TextStyle(
               fontStyle: FontStyle.normal,
               fontWeight: FontWeight.bold,
+              fontSize: 20.0,
               color: Color.fromRGBO(234, 244, 252, 1))),
       children: children,
       onExpansionChanged: (bool expanding) {
@@ -255,6 +262,7 @@ class _MyHomePageState extends State<MyHomePage> {
           style: TextStyle(
               fontStyle: FontStyle.normal,
               fontWeight: FontWeight.bold,
+              fontSize: 20.0,
               color: Color.fromRGBO(234, 244, 252, 1))),
       selected: currentEmployees == team.employees,
       onTap: () {
@@ -312,12 +320,14 @@ class _MyHomePageState extends State<MyHomePage> {
             }
 
             // Step 3: Validate data
-            final isValidData = validateCsvData(fields, selectedTable);
-            debugPrint("Is valid data: " + isValidData.toString());
+            final errorMessage = validateCsvData(fields, selectedTable);
+            debugPrint("Is valid data: " + (errorMessage == null).toString());
             debugPrint("Fields: " + fields.toString());
 
-            if (!isValidData) {
-              // Show error message or dialog
+            if (errorMessage != null) {
+              // Show error message using SnackBar
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(errorMessage)));
               return;
             } else {
               transformFields =

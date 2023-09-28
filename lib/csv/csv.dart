@@ -7,8 +7,8 @@ bool isInt(String? s) {
 }
 
 //CSVデータの判定処理
-bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
-  if (fields.isEmpty) return false;
+String? validateCsvData(List<List<dynamic>> fields, String selectedTable) {
+  if (fields.isEmpty) return "データが空です";
 
   List<dynamic> header = fields.first.map((e) => e.toString().trim()).toList();
   debugPrint("Header elements:");
@@ -22,21 +22,21 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
     case 'Department':
       if (!header.contains('id') || !header.contains('name')) {
         debugPrint('Incorrect header');
-        return false;
+        return "ヘッダーが不足しています";
       }
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) {
           debugPrint('Inconsistent row size');
-          return false;
+          return "行のサイズが一致しません";
         }
         // Inconsistent row size
         if (row[0] == null || row[1] == null) {
           debugPrint('Null values');
-          return false;
+          return "空にならないデータが空になっています";
         } // Null values
         if (!isInt(row[0]) || row[1] is! String) {
           debugPrint('Incorrect types');
-          return false;
+          return "データの型が一致しません";
         } // Incorrect types
       }
       break;
@@ -45,20 +45,20 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
           !header.contains('name') ||
           !header.contains('department_id')) {
         debugPrint('Incorrect header for Group');
-        return false;
+        return "ヘッダーが不足しています";
       }
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) {
           debugPrint('Inconsistent row size in Group');
-          return false;
+          return "行のサイズが一致しません";
         }
         if (row[0] == null || row[1] == null || row[2] == null) {
           debugPrint('Null values in Group');
-          return false;
+          return "空にならないデータが空になっています";
         }
         if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
           debugPrint('Incorrect types in Group');
-          return false;
+          return "データの型が一致しません";
         }
       }
       break;
@@ -67,20 +67,20 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
           !header.contains('name') ||
           !header.contains('group_id')) {
         debugPrint('Incorrect header for Team');
-        return false;
+        return "ヘッダーが不足しています";
       }
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) {
           debugPrint('Inconsistent row size in Team');
-          return false;
+          return "行のサイズが一致しません";
         }
         if (row[0] == null || row[1] == null || row[2] == null) {
           debugPrint('Null values in Team');
-          return false;
+          return "空にならないデータが空になっています";
         }
         if (!isInt(row[0]) || row[1] is! String || !isInt(row[2])) {
           debugPrint('Incorrect types in Team');
-          return false;
+          return "データの型が一致しません";
         }
       }
       break;
@@ -93,14 +93,14 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
           !header.contains('department_id') ||
           !header.contains('group_id') ||
           !header.contains('team_id') ||
-          !header.contains('isHide')) {
+          !header.contains('is_hide')) {
         debugPrint('Incorrect header for Employee');
-        return false;
+        return "ヘッダーが不足しています";
       }
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) {
           debugPrint('Inconsistent row size');
-          return false;
+          return "行のサイズが一致しません";
         }
         if (row[0] == null ||
             row[1] == null ||
@@ -108,7 +108,7 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
             row[3] == null ||
             row[4] == null) {
           debugPrint('Null values');
-          return false;
+          return "空にならないデータが空になっています";
         }
         if (!isInt(row[0]) ||
             row[1] is! String ||
@@ -116,12 +116,12 @@ bool validateCsvData(List<List<dynamic>> fields, String selectedTable) {
             row[3] is! String ||
             row[4] is! String) {
           debugPrint('Incorrect types');
-          return false;
+          return "データの型が一致しません";
         }
       }
       break;
   }
-  return true;
+  return null;
 }
 
 List<List<dynamic>> validateAndTransformCsvData(
