@@ -85,38 +85,56 @@ String? validateCsvData(List<List<dynamic>> fields, String selectedTable) {
       }
       break;
     case 'Employee':
-      if (!header.contains('id') ||
-          !header.contains('name') ||
-          !header.contains('email') ||
-          !header.contains('position') ||
-          !header.contains('extension') ||
-          !header.contains('department_id') ||
-          !header.contains('group_id') ||
-          !header.contains('team_id') ||
-          !header.contains('is_hide')) {
+      List<String> requiredFields = [
+        'id',
+        'name',
+        'email',
+        'position',
+        'extension',
+        'department_ids',
+        'group_ids',
+        'team_ids',
+        'is_hide'
+      ];
+
+      // Ensure each element in header is a String
+      List<String> headerStrings = header.map((e) => e.toString()).toList();
+
+      if (!Set<String>.from(headerStrings).containsAll(requiredFields)) {
         debugPrint('Incorrect header for Employee');
         return "ヘッダーが不足しています";
       }
+
       for (var row in fields.sublist(1)) {
         if (row.length != header.length) {
           debugPrint('Inconsistent row size');
           return "行のサイズが一致しません";
         }
-        if (row[0] == null ||
-            row[1] == null ||
-            row[2] == null ||
-            row[3] == null ||
-            row[4] == null) {
+
+        Map<String, dynamic> rowMap = Map.fromIterables(headerStrings, row);
+
+        if (rowMap.values.any((element) => element == null)) {
           debugPrint('Null values');
           return "空にならないデータが空になっています";
         }
-        if (!isInt(row[0]) ||
-            row[1] is! String ||
-            row[2] is! String ||
-            row[3] is! String ||
-            row[4] is! String) {
+
+        if (!isInt(rowMap['id']) ||
+            rowMap['name'] is! String ||
+            rowMap['email'] is! String ||
+            rowMap['position'] is! String ||
+            rowMap['extension'] is! String) {
           debugPrint('Incorrect types');
           return "データの型が一致しません";
+        }
+
+        for (String field in ['department_ids', 'group_ids', 'team_ids']) {
+          if (rowMap[field] is String) {
+            var ids = rowMap[field].split(',');
+            if (ids.any((id) => !isInt(id))) {
+              debugPrint('Incorrect types in $field');
+              return "$fieldのデータ型が一致しません";
+            }
+          }
         }
       }
       break;
@@ -256,12 +274,21 @@ List<Team> parseTeams(List<List<dynamic>> fields) {
 }
 
 List<Employee> parseEmployees(List<List<dynamic>> fields) {
-  return fields
-      .map((field) => Employee(field[0] as int, field[1] as String,
-          field[2] as String, field[3] as String, field[4] as String,
-          departmentId: field[5] as int?,
-          groupId: field[6] as int?,
-          teamId: field[7] as int?,
-          isHide: field[8] == 1 ? true : false))
-      .toList();
+  return fields.map((field) {
+    List<int>? parseIds(String? ids) {
+      if (ids == null || ids.isEmpty) return null;
+      return ids
+          .split(',')
+          .where((e) => e.isNotEmpty)
+          .map((id) => int.parse(id))
+          .toList();
+    }
+
+    return Employee(field[0] as int, field[1] as String, field[2] as String,
+        field[3] as String, field[4] as String,
+        departmentIds: parseIds(field[5] as String?),
+        groupIds: parseIds(field[6] as String?),
+        teamIds: parseIds(field[7] as String?),
+        isHide: field[8] == 1 ? true : false);
+  }).toList();
 }
