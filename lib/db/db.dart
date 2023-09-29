@@ -244,19 +244,25 @@ Future<void> insertEmployee(Database db, employeeList) async {
     await db.insert('employee', employee.toDatabaseMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
 
-    for (var departmentId in employee.departmentIds!) {
-      await db.insert('employee_department',
-          {'employee_id': employee.id, 'department_id': departmentId});
+    if (employee.departmentIds != null) {
+      for (var departmentId in employee.departmentIds!) {
+        await db.insert('employee_department',
+            {'employee_id': employee.id, 'department_id': departmentId});
+      }
     }
 
-    for (var groupId in employee.groupIds!) {
-      await db.insert(
-          'employee_group', {'employee_id': employee.id, 'group_id': groupId});
+    if (employee.groupIds != null) {
+      for (var groupId in employee.groupIds!) {
+        await db.insert('employee_group',
+            {'employee_id': employee.id, 'group_id': groupId});
+      }
     }
 
-    for (var teamId in employee.teamIds!) {
-      await db.insert(
-          'employee_team', {'employee_id': employee.id, 'team_id': teamId});
+    if (employee.teamIds != null) {
+      for (var teamId in employee.teamIds!) {
+        await db.insert(
+            'employee_team', {'employee_id': employee.id, 'team_id': teamId});
+      }
     }
   }
 }
