@@ -244,25 +244,19 @@ Future<void> insertEmployee(Database db, employeeList) async {
     await db.insert('employee', employee.toDatabaseMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
 
-    if (employee.departmentIds != null) {
-      for (var departmentId in employee.departmentIds!) {
-        await db.insert('employee_department',
-            {'employee_id': employee.id, 'department_id': departmentId});
-      }
+    for (var departmentId in employee.departmentIds!) {
+      await db.insert('employee_department',
+          {'employee_id': employee.id, 'department_id': departmentId});
     }
 
-    if (employee.groupIds != null) {
-      for (var groupId in employee.groupIds!) {
-        await db.insert('employee_group',
-            {'employee_id': employee.id, 'group_id': groupId});
-      }
+    for (var groupId in employee.groupIds!) {
+      await db.insert(
+          'employee_group', {'employee_id': employee.id, 'group_id': groupId});
     }
 
-    if (employee.teamIds != null) {
-      for (var teamId in employee.teamIds!) {
-        await db.insert(
-            'employee_team', {'employee_id': employee.id, 'team_id': teamId});
-      }
+    for (var teamId in employee.teamIds!) {
+      await db.insert(
+          'employee_team', {'employee_id': employee.id, 'team_id': teamId});
     }
   }
 }
@@ -508,11 +502,7 @@ Future<List<Department>> updateDepartmentsFromDB(Database db) async {
 
     // Get employees belonging directly to this department (not part of any group or team)
     List<Employee> deptEmployees = dbEmployees
-        .where((e) =>
-            e.departmentIds?.contains(dbDept.id) ??
-            false &&
-                (e.groupIds?.isEmpty ?? true) &&
-                (e.teamIds?.isEmpty ?? true))
+        .where((e) => e.departmentIds?.contains(dbDept.id) ?? false)
         .toList();
 
     return Department(dbDept.id, dbDept.name,
