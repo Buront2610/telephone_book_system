@@ -76,19 +76,42 @@ class _MyHomePageState extends State<MyHomePage> {
     allEmployees = allEmployees.toSet().toList();
   }
 
-  void _filterEmployees(String query) {
+  void _filterEmployees(String query,
+      {int? departmentId, int? groupId, int? teamId}) {
     debugPrint("Query: " + query);
-    if (query.isEmpty) {
+    if (query.isEmpty &&
+        departmentId == null &&
+        groupId == null &&
+        teamId == null) {
       _resetAllEmployees();
       setState(() {
         currentEmployees = List.from(allEmployees);
       });
     } else {
       setState(() {
-        currentEmployees = allEmployees
-            .where((employee) =>
-                employee.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        currentEmployees = allEmployees.where((employee) {
+          bool matchesQuery =
+              employee.name.toLowerCase().contains(query.toLowerCase());
+
+          bool inSelectedDepartment = departmentId != null &&
+              employee.departmentIds?.contains(departmentId) == true;
+
+          bool inSelectedGroup =
+              groupId != null && employee.groupIds?.contains(groupId) == true;
+
+          bool inSelectedTeam =
+              teamId != null && employee.teamIds?.contains(teamId) == true;
+
+          bool matchesDepartment = teamId != null
+              ? inSelectedTeam
+              : groupId != null
+                  ? inSelectedGroup
+                  : departmentId != null
+                      ? inSelectedDepartment
+                      : true;
+
+          return matchesQuery && matchesDepartment;
+        }).toList();
       });
     }
   }
@@ -224,7 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
       onExpansionChanged: (bool expanding) {
         if (expanding) {
           setState(() {
-            currentEmployees = department.employees;
+            _filterEmployees("", departmentId: department.id);
             originalEmployees = List.from(currentEmployees);
           });
         }
@@ -248,7 +271,8 @@ class _MyHomePageState extends State<MyHomePage> {
       onExpansionChanged: (bool expanding) {
         if (expanding) {
           setState(() {
-            currentEmployees = group.employees;
+            _filterEmployees("",
+                departmentId: group.departmentId, groupId: group.id);
           });
         }
       },
@@ -267,7 +291,7 @@ class _MyHomePageState extends State<MyHomePage> {
       selected: currentEmployees == team.employees,
       onTap: () {
         setState(() {
-          currentEmployees = team.employees;
+          _filterEmployees("", groupId: team.groupId, teamId: team.id);
         });
       },
     );
@@ -316,7 +340,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
             for (var line in lines) {
               debugPrint("Line: " + line.toString());
-              fields.add(line.split(',').map((e) => e.trim()).toList());
+              fields.add(line
+                  .split(',')
+                  .map((e) => e.isEmpty ? e : e.trim())
+                  .toList()); // ここを修正
             }
 
             // Step 3: Validate data

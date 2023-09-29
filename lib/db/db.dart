@@ -244,19 +244,25 @@ Future<void> insertEmployee(Database db, employeeList) async {
     await db.insert('employee', employee.toDatabaseMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
 
-    for (var departmentId in employee.departmentIds!) {
-      await db.insert('employee_department',
-          {'employee_id': employee.id, 'department_id': departmentId});
+    if (employee.departmentIds != null) {
+      for (var departmentId in employee.departmentIds!) {
+        await db.insert('employee_department',
+            {'employee_id': employee.id, 'department_id': departmentId});
+      }
     }
 
-    for (var groupId in employee.groupIds!) {
-      await db.insert(
-          'employee_group', {'employee_id': employee.id, 'group_id': groupId});
+    if (employee.groupIds != null) {
+      for (var groupId in employee.groupIds!) {
+        await db.insert('employee_group',
+            {'employee_id': employee.id, 'group_id': groupId});
+      }
     }
 
-    for (var teamId in employee.teamIds!) {
-      await db.insert(
-          'employee_team', {'employee_id': employee.id, 'team_id': teamId});
+    if (employee.teamIds != null) {
+      for (var teamId in employee.teamIds!) {
+        await db.insert(
+            'employee_team', {'employee_id': employee.id, 'team_id': teamId});
+      }
     }
   }
 }
@@ -271,8 +277,9 @@ Future<void> setupInsertEmployee(Database db) async {
         departmentIds: [2, 3], groupIds: [4, 5], teamIds: [1, 2]),
     Employee(3, 'John Doe', '営業', '456', 'john@co.jp',
         departmentIds: [2], groupIds: [2, 3], teamIds: [3, 4]),
-    Employee(4, 'Mary Smith', '技術者', '789', 'Mary@co.jp,',
+    Employee(4, 'Mary Smith', '技術者', '789', 'Mary@co.jp',
         departmentIds: [2], groupIds: [4, 5], teamIds: []),
+
     // ... 他の従業員データ ...
   ];
   for (var employee in employeeList) {
@@ -501,7 +508,11 @@ Future<List<Department>> updateDepartmentsFromDB(Database db) async {
 
     // Get employees belonging directly to this department (not part of any group or team)
     List<Employee> deptEmployees = dbEmployees
-        .where((e) => e.departmentIds?.contains(dbDept.id) ?? false)
+        .where((e) =>
+            e.departmentIds?.contains(dbDept.id) ??
+            false &&
+                (e.groupIds?.isEmpty ?? true) &&
+                (e.teamIds?.isEmpty ?? true))
         .toList();
 
     return Department(dbDept.id, dbDept.name,
@@ -584,43 +595,118 @@ String listToCsv(List<Map<String, dynamic>> records) {
   return csvBuffer.toString();
 }
 
-// Export all records from the "department" table as CSV
+// Convert Department object to CSV string
+Future<String> departmentToCsv(List<Department> departments) async {
+  StringBuffer buffer = StringBuffer();
+
+  // Write header
+  buffer.writeln("id,name"); // Header
+
+  // Write department data
+  for (var department in departments) {
+    buffer.writeln("${department.id},${department.name}");
+  }
+
+  return buffer.toString();
+}
+
+Future<String> groupToCsv(List<Group> groups) async {
+  StringBuffer buffer = StringBuffer();
+
+  // Write header
+  buffer.writeln("id,name,department_id"); // Header
+
+  // Write group data
+  for (var group in groups) {
+    buffer.writeln("${group.id},${group.name},${group.departmentId}");
+  }
+
+  return buffer.toString();
+}
+
+// Convert Team object to CSV string
+Future<String> teamToCsv(List<Team> teams) async {
+  StringBuffer buffer = StringBuffer();
+
+  // Write header
+  buffer.writeln("id,name,group_id"); // Header
+
+  // Write team data
+  for (var team in teams) {
+    buffer.writeln("${team.id},${team.name},${team.groupId}");
+  }
+
+  return buffer.toString();
+}
+
+Future<String> employeeToCsv(List<Employee> employees) async {
+  StringBuffer buffer = StringBuffer();
+
+  // Write header
+  buffer.writeln(
+      "id,name,position,extension,email,department_ids,group_ids,team_ids,is_hide"); // Headerを小文字に
+
+  // Write employee data
+  for (var employee in employees) {
+    // Convert lists of IDs to string using pipe as a delimiter
+    String departmentIds = employee.departmentIds?.join('|') ?? '';
+    String groupIds = employee.groupIds?.join('|') ?? '';
+    String teamIds = employee.teamIds?.join('|') ?? '';
+
+    // Convert isHide to int (1 or 0)
+    int isHide = employee.isHide ? 1 : 0;
+
+    buffer.writeln(
+        "${employee.id},${employee.name},${employee.position},${employee.extension},${employee.email},${departmentIds},${groupIds},${teamIds},${isHide}");
+  }
+
+  return buffer.toString();
+}
+
+// Export all Department objects as CSV
 Future<String> exportDepartmentsToCsv(Database db) async {
-  final List<Map<String, dynamic>> records = await db.query('department');
-  return listToCsv(records);
+  List<Department> departments = await getDepartments(db);
+  List<String> csvList = [];
+  csvList.add(await departmentToCsv(departments));
+
+  return csvList.join('\n');
 }
 
-// Export all records from the "group_table" table as CSV
+// Export all Group objects as CSV
 Future<String> exportGroupsToCsv(Database db) async {
-  final List<Map<String, dynamic>> records = await db.query('group_table');
-  return listToCsv(records);
+  List<Group> groups = await getGroups(db);
+  List<String> csvList = [];
+  csvList.add(await groupToCsv(groups));
+
+  return csvList.join('\n');
 }
 
-// Export all records from the "team" table as CSV
+// Export all Team objects as CSV
 Future<String> exportTeamsToCsv(Database db) async {
-  final List<Map<String, dynamic>> records = await db.query('team');
-  return listToCsv(records);
+  List<Team> teams = await getTeams(db);
+  List<String> csvList = [];
+
+  csvList.add(await teamToCsv(teams));
+
+  return csvList.join('\n');
 }
 
-// Export all records from the "employee" table as CSV
+// Export all Employee objects as CSV
 Future<String> exportEmployeesToCsv(Database db) async {
-  final List<Map<String, dynamic>> records = await db.query('employee');
-  return listToCsv(records);
+  List<Employee> employees = await getEmployees(db);
+  List<String> csvList = [];
+  csvList.add(await employeeToCsv(employees));
+  return csvList.join('\n');
 }
 
-// Export all records from the "department" table as CSV
-
+// Save CSV content to a file
 Future<void> saveCsvToFile(
     String csvContent, String fileName, String directory) async {
-  // 選択されたディレクトリとファイル名でFileインスタンスを作成
   final File file = File(join(directory, '$fileName.csv'));
-
-  // ファイルにCSVコンテンツを書き込む
   await file.writeAsString(csvContent);
 }
 
 void exportToCSV(Database db) async {
-  // パーミッションをリクエスト
   // パーミッションをリクエスト
   PermissionStatus status = await Permission.manageExternalStorage.request();
   debugPrint("Permission status: $status");
@@ -637,22 +723,22 @@ void exportToCSV(Database db) async {
     if (directory != null) {
       // Export Departments
       final String departmentsCsv = await exportDepartmentsToCsv(db);
-      debugPrint("CSV:" + departmentsCsv);
+      debugPrint("Departments CSV:" + departmentsCsv);
       await saveCsvToFile(departmentsCsv, 'departments', directory);
 
       // Export Groups
       final String groupsCsv = await exportGroupsToCsv(db);
-      debugPrint("CSV:" + groupsCsv);
+      debugPrint("Groups CSV:" + groupsCsv);
       await saveCsvToFile(groupsCsv, 'groups', directory);
 
       // Export Teams
       final String teamsCsv = await exportTeamsToCsv(db);
-      debugPrint("CSV:" + teamsCsv);
+      debugPrint("Teams CSV:" + teamsCsv);
       await saveCsvToFile(teamsCsv, 'teams', directory);
 
       // Export Employees
       final String employeesCsv = await exportEmployeesToCsv(db);
-      debugPrint("CSV:" + employeesCsv);
+      debugPrint("Employees CSV:" + employeesCsv);
       await saveCsvToFile(employeesCsv, 'employees', directory);
     } else {
       print("No directory selected");
@@ -680,7 +766,7 @@ Future<Database> initializeDB() async {
   Directory documentsDirectory = await getApplicationDocumentsDirectory();
   // String path = await getDatabasesPath();
   // debugPrint("Database path: $documentsDirectory.path");
-  return openDatabase(join(documentsDirectory.path, 'telephone_books.db'),
+  return openDatabase(join(documentsDirectory.path, 'telephone_books2.db'),
       onCreate: (database, version) async {
     await createTables(database);
     await setupInsertDepartment(database);

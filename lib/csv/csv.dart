@@ -17,6 +17,13 @@ String? validateCsvData(List<List<dynamic>> fields, String selectedTable) {
   }
   debugPrint(fields.toString());
   debugPrint(selectedTable);
+  for (var row in fields.sublist(1)) {
+    debugPrint("Row size: ${row.length}, Header size: ${header.length}");
+    if (row.length != header.length) {
+      debugPrint('Inconsistent row size at row: $row');
+      return "行のサイズが一致しません";
+    }
+  }
 
   switch (selectedTable) {
     case 'Department':
@@ -94,10 +101,9 @@ String? validateCsvData(List<List<dynamic>> fields, String selectedTable) {
         'department_ids',
         'group_ids',
         'team_ids',
-        'is_hide'
+        'is_hide' // 小文字に修正
       ];
 
-      // Ensure each element in header is a String
       List<String> headerStrings = header.map((e) => e.toString()).toList();
 
       if (!Set<String>.from(headerStrings).containsAll(requiredFields)) {
@@ -128,8 +134,10 @@ String? validateCsvData(List<List<dynamic>> fields, String selectedTable) {
         }
 
         for (String field in ['department_ids', 'group_ids', 'team_ids']) {
-          if (rowMap[field] is String) {
-            var ids = rowMap[field].split(',');
+          if (rowMap[field] != null &&
+              rowMap[field] is String &&
+              rowMap[field] != "") {
+            var ids = rowMap[field].split('|');
             if (ids.any((id) => !isInt(id))) {
               debugPrint('Incorrect types in $field');
               return "$fieldのデータ型が一致しません";
@@ -275,20 +283,28 @@ List<Team> parseTeams(List<List<dynamic>> fields) {
 
 List<Employee> parseEmployees(List<List<dynamic>> fields) {
   return fields.map((field) {
-    List<int>? parseIds(String? ids) {
-      if (ids == null || ids.isEmpty) return null;
-      return ids
-          .split(',')
+    List<int>? parseIds(dynamic ids) {
+      if (ids == null) return null;
+      var idsStr = ids is String ? ids : ids.toString();
+      return idsStr
+          .split('|')
           .where((e) => e.isNotEmpty)
           .map((id) => int.parse(id))
           .toList();
     }
 
-    return Employee(field[0] as int, field[1] as String, field[2] as String,
-        field[3] as String, field[4] as String,
-        departmentIds: parseIds(field[5] as String?),
-        groupIds: parseIds(field[6] as String?),
-        teamIds: parseIds(field[7] as String?),
-        isHide: field[8] == 1 ? true : false);
+    int id = (field[0] is int) ? field[0] : int.parse(field[0] as String);
+    String name = field[1] as String;
+    String email = field[2] as String;
+    String position = field[3] as String;
+    String extension = field[4] as String;
+    bool isHide =
+        (field[8] is int) ? field[8] == 1 : (field[8] as String) == '1';
+
+    return Employee(id, name, email, position, extension,
+        departmentIds: parseIds(field[5]),
+        groupIds: parseIds(field[6]),
+        teamIds: parseIds(field[7]),
+        isHide: isHide);
   }).toList();
 }
